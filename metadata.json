@@ -1,0 +1,6 @@
+{
+  "name": "DM 2. Challenge Definition",
+  "description": "An intelligent app to help users formulate strategic marketing or business challenges by integrating insights on context, customer type, frictions, and mental models. It guides users through diagnosis, challenge formulation, and smart prompt generation for ideation.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
