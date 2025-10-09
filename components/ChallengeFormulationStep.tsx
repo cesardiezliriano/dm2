@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect } from 'react';
 import { DiagnosisData, FormulatedChallenge, GroundingChunk, Language, UIStringKeys } from '../types';
 import { generateChallengeFormulation } from '../services/geminiService';
@@ -107,11 +108,18 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
             <Card title={rumeltGuidingPolicyLabel} titleClassName="text-[#36A7B7]"> 
               <AIHelperTextarea id="rumeltGuidingPolicy" name="rumeltGuidingPolicy" apiLabel={rumeltGuidingPolicyLabel} value={challengeData.rumeltGuidingPolicy} onChange={handleInputChange} placeholder={getText(lang, UIStringKeys.PlaceholderAIWillGenerate)} diagnosisContext={diagnosisData} lang={lang} />
             </Card>
-            <Card title={behavioralJustificationLabel} titleClassName="text-[#FC6B08] flex items-center">
-                <BrainIcon className="w-5 h-5 mr-2" />
-                <span>{behavioralJustificationLabel}</span>
+            {/* FIX: Combined the Card and AIHelperTextarea for 'Behavioral Justification' to fix a layout bug and improve UI consistency. */}
+            <Card 
+              title={
+                <>
+                  <BrainIcon className="w-5 h-5 mr-2" />
+                  {behavioralJustificationLabel}
+                </>
+              }
+              titleClassName="text-[#FC6B08] flex items-center"
+            >
+              <AIHelperTextarea id="behavioralJustification" name="behavioralJustification" apiLabel={behavioralJustificationLabel} value={challengeData.behavioralJustification} onChange={handleInputChange} placeholder={getText(lang, UIStringKeys.PlaceholderAIWillGenerate)} diagnosisContext={diagnosisData} lang={lang} />
             </Card>
-            <AIHelperTextarea id="behavioralJustification" name="behavioralJustification" apiLabel={behavioralJustificationLabel} value={challengeData.behavioralJustification} onChange={handleInputChange} placeholder={getText(lang, UIStringKeys.PlaceholderAIWillGenerate)} diagnosisContext={diagnosisData} lang={lang} />
 
             <Card title={culturalTensionLabel} titleClassName="text-[#8B8BB2]"> 
               <AIHelperTextarea id="culturalTension" name="culturalTension" apiLabel={culturalTensionLabel} value={challengeData.culturalTension} onChange={handleInputChange} placeholder={getText(lang, UIStringKeys.PlaceholderAIWillGenerate)} diagnosisContext={diagnosisData} lang={lang} />

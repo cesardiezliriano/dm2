@@ -10,7 +10,7 @@ import HelpBotButton from './components/HelpBotButton';
 import HelpBotModal from './components/HelpBotModal';
 import FeedbackButton from './components/FeedbackButton';
 import { initialDiagnosisData, initialFormulatedChallenge, getText } from './constants';
-import { ArrowLeftIcon, ArrowRightIcon, SparklesIcon } from './components/Icons';
+import { ArrowLeftIcon, ArrowRightIcon } from './components/Icons';
 
 const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<AppStep>(AppStep.DIAGNOSIS);
@@ -109,9 +109,11 @@ const App: React.FC = () => {
   return (
     <div className="bg-white shadow-2xl rounded-xl p-6 md:p-10 w-full min-h-[80vh] flex flex-col text-[#0A263B]">
       <header className="mb-8 text-center relative">
-        <h1 className="font-['Montserrat'] text-3xl md:text-4xl font-bold text-[#F54963] flex items-center justify-center space-x-2"> 
-          <SparklesIcon className="w-8 h-8 text-[#36A7B7]" /> 
-          <span>{getText(currentLanguage, UIStringKeys.AppName)}</span>
+        <div className="absolute top-0 left-0 font-['Montserrat'] text-2xl font-bold text-[#F54963] uppercase">
+          LLYC
+        </div>
+        <h1 className="font-['Montserrat'] text-2xl md:text-3xl font-bold text-[#F54963] mt-10">
+          {getText(currentLanguage, UIStringKeys.AppName)}
         </h1>
         <p className="text-[#6D7475] mt-2 font-['Open_Sans']">{getText(currentLanguage, UIStringKeys.AppSubtitle)}</p>
         <div className="absolute top-0 right-0 flex space-x-2">

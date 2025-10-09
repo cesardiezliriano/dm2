@@ -106,11 +106,10 @@ export const generateChallengeFormulation = async (
     const languageInstruction = getLanguageInstruction(lang, 'json_object');
     const systemPromptStrategist = `${BASE_SYSTEM_PROMPT_STRATEGIST}\n\n${languageInstruction}`;
 
+    // FIX: Simplified the 'contents' parameter to a string for a single-turn prompt, as per API guidelines.
     const response: GenerateContentResponse = await model.generateContent({
       model: GEMINI_MODEL_TEXT,
-      contents: [
-        { role: "user", parts: [{ text: `Here is the diagnosis data: ${JSON.stringify(diagnosis, null, 2)} Please formulate the strategic challenge kernel (Diagnosis and Guiding Policy) based on this, following Rumelt's principles.` }] }
-      ],
+      contents: `Here is the diagnosis data: ${JSON.stringify(diagnosis, null, 2)} Please formulate the strategic challenge kernel (Diagnosis and Guiding Policy) based on this, following Rumelt's principles.`,
       config: {
         systemInstruction: systemPromptStrategist,
         responseMimeType: "application/json",
@@ -144,11 +143,10 @@ export const generateSmartPrompts = async (
     const languageInstruction = getLanguageInstruction(lang, 'json_array_of_strings');
     const systemPromptPromptGenerator = `${BASE_SYSTEM_PROMPT_PROMPT_GENERATOR}\n\n${languageInstruction}`;
     
+    // FIX: Simplified the 'contents' parameter to a string for a single-turn prompt, as per API guidelines.
     const response: GenerateContentResponse = await model.generateContent({
       model: GEMINI_MODEL_TEXT,
-      contents: [
-        { role: "user", parts: [{ text: `Here is the formulated strategic challenge kernel (Rumelt's Diagnosis and Guiding Policy): ${JSON.stringify(challenge, null, 2)} Please generate smart prompts for Coherent Actions based on this.` }] }
-      ],
+      contents: `Here is the formulated strategic challenge kernel (Rumelt's Diagnosis and Guiding Policy): ${JSON.stringify(challenge, null, 2)} Please generate smart prompts for Coherent Actions based on this.`,
       config: {
         systemInstruction: systemPromptPromptGenerator,
         responseMimeType: "application/json",
@@ -183,9 +181,10 @@ export const suggestContextualItem = async (
     const model = ai.models;
     const languageInstruction = getLanguageInstruction(lang, 'json_array_of_strings');
     const prompt = `Given the current context: ${JSON.stringify(context)}, and the user is trying to define "${fieldType}" and has typed "${currentValue}", suggest 3-5 improved or alternative phrases. Focus on clarity and strategic relevance according to Rumelt's principles (e.g., for a diagnosis, ensure it's a specific challenge, not a goal). Output as a JSON array of strings.\n\n${languageInstruction}`;
+    // FIX: Simplified the 'contents' parameter to a string for a single-turn prompt, as per API guidelines.
     const response: GenerateContentResponse = await model.generateContent({
       model: GEMINI_MODEL_TEXT,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: prompt,
       config: {
         responseMimeType: "application/json",
         thinkingConfig: { thinkingBudget: 0 } 

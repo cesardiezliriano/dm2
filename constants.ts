@@ -1,7 +1,8 @@
 
 import { DiagnosisData, FormulatedChallenge, FunnelStage, InvolvementLevel, Language, UIStringKeys, HelpTopic } from './types';
 
-export const GEMINI_MODEL_TEXT = 'gemini-2.5-flash-preview-04-17';
+// FIX: Updated to the recommended model 'gemini-2.5-flash' as per the guidelines.
+export const GEMINI_MODEL_TEXT = 'gemini-2.5-flash';
 
 export const initialDiagnosisData: DiagnosisData = {
   clientName: '',
@@ -48,7 +49,7 @@ export const defaultInvolvementLevels: InvolvementLevel[] = [
 
 export const translations: Record<Language, Record<UIStringKeys, string>> = {
   [Language.EN]: {
-    [UIStringKeys.AppName]: "DM 2. Challenge Definition",
+    [UIStringKeys.AppName]: "Challenge Definition",
     [UIStringKeys.AppSubtitle]: "Crafting Strategic Clarity, Together.",
     [UIStringKeys.FooterStep]: "Step {current} of {total}",
     [UIStringKeys.HelpButtonTooltip]: "Help & User Guide",
@@ -157,8 +158,8 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.LoadingSpinnerSR]: "Loading...",
   },
   [Language.ES]: {
-    [UIStringKeys.AppName]: "DM 2. Definición del Reto", 
-    [UIStringKeys.AppSubtitle]: "Creando Claridad Estratégica, Juntos.",
+    [UIStringKeys.AppName]: "Definición del Reto", 
+    [UIStringKeys.AppSubtitle]: "Creando claridad estratégica, juntos.",
     [UIStringKeys.FooterStep]: "Paso {current} de {total}",
     [UIStringKeys.HelpButtonTooltip]: "Ayuda y Guía de Usuario",
     [UIStringKeys.HelpModalTitle]: "Ayudante de DM 2. Definición del Reto",
