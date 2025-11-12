@@ -1,4 +1,5 @@
-import React, { ChangeEvent, useRef } from 'react';
+
+import React, { ChangeEvent, useRef, useState } from 'react';
 import { DiagnosisData, FunnelStage, InvolvementLevel, Language, UIStringKeys } from '../types';
 import { defaultFunnelStages, defaultInvolvementLevels, getText } from '../constants';
 import Input from './common/Input';
@@ -8,6 +9,8 @@ import Card from './common/Card';
 import { AcademicCapIcon, DocumentTextIcon, XMarkIcon } from './Icons';
 import Button from './common/Button'; 
 import AIHelperTextarea from './common/AIHelperTextarea';
+import * as pdfjsLib from 'pdfjs-dist';
+import LoadingSpinner from './common/LoadingSpinner';
 
 interface DiagnosisStepProps {
   data: DiagnosisData;
@@ -19,6 +22,7 @@ interface DiagnosisStepProps {
 
 const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isParsingPdf, setIsParsingPdf] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -42,21 +46,47 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
     }
   };
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    // Always clear previous file info first
+    onUpdate({ briefingFileName: null, briefingFileContent: null });
+
     if (file && file.type === "application/pdf") {
+      setIsParsingPdf(true);
       onUpdate({ briefingFileName: file.name });
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          // Type guard for TextItem
+          const pageText = textContent.items.map(item => ('str' in item ? item.str : '')).join(' ');
+          fullText += pageText + '\n\n';
+        }
+        onUpdate({ briefingFileContent: fullText });
+      } catch (error) {
+        console.error("Failed to parse PDF:", error);
+        onUpdate({ 
+          briefingFileName: `Error parsing ${file.name}`, 
+          briefingFileContent: `Error: ${error instanceof Error ? error.message : 'Unknown PDF parsing error.'}`
+        });
+        alert(`Failed to parse PDF: ${file.name}`);
+      } finally {
+        setIsParsingPdf(false);
+      }
     } else if (file) {
       alert(getText(lang, UIStringKeys.AlertNonPDF));
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      onUpdate({ briefingFileName: null });
+      onUpdate({ briefingFileName: null, briefingFileContent: null });
     }
   };
 
   const handleRemoveFile = () => {
-    onUpdate({ briefingFileName: null });
+    onUpdate({ briefingFileName: null, briefingFileContent: null });
     if (fileInputRef.current) {
       fileInputRef.current.value = ""; 
     }
@@ -64,8 +94,6 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
 
   const funnelStageOptions = defaultFunnelStages.map(stage => ({ value: stage, label: stage }));
   const involvementLevelOptions = defaultInvolvementLevels.map(level => ({ value: level, label: level }));
-  
-  const coreProblemLabel = getText(lang, UIStringKeys.LabelCoreProblem);
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -119,15 +147,23 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
             />
             {data.briefingFileName ? (
               <div className="flex items-center space-x-2 text-sm text-[#0A263B] bg-gray-100 px-3 py-1.5 rounded-md">
-                <span>{getText(lang, UIStringKeys.FileSelected, { fileName: data.briefingFileName })}</span>
-                <button 
-                  onClick={handleRemoveFile} 
-                  className="text-[#F54963] hover:text-[#D43A50]"
-                  title={getText(lang, UIStringKeys.ButtonRemoveFile)}
-                  type="button"
-                >
-                  <XMarkIcon className="w-4 h-4" />
-                </button>
+                {isParsingPdf && <LoadingSpinner size="sm" color="text-[#36A7B7]" lang={lang}/>}
+                <span>
+                    {isParsingPdf 
+                        ? getText(lang, UIStringKeys.FileParsing, { fileName: data.briefingFileName })
+                        : getText(lang, UIStringKeys.FileSelected, { fileName: data.briefingFileName })
+                    }
+                </span>
+                {!isParsingPdf && (
+                    <button 
+                        onClick={handleRemoveFile} 
+                        className="text-[#F54963] hover:text-[#D43A50]"
+                        title={getText(lang, UIStringKeys.ButtonRemoveFile)}
+                        type="button"
+                    >
+                        <XMarkIcon className="w-4 h-4" />
+                    </button>
+                )}
               </div>
             ) : (
               <span className="text-sm text-[#ACB4B6] font-['Open_Sans']">{getText(lang, UIStringKeys.PlaceholderNoFileSelected)}</span>
@@ -139,21 +175,32 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card title={getText(lang, UIStringKeys.HeaderBusinessMarketContext)}>
-          <Input label={getText(lang, UIStringKeys.LabelCustomerType)} id="customerType" name="customerType" value={data.customerType} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderCustomerType)} />
-          <Input label={getText(lang, UIStringKeys.LabelMarketCategory)} id="market" name="market" value={data.market} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderMarketCategory)} />
-          <Input label={getText(lang, UIStringKeys.LabelSectorIndustry)} id="sector" name="sector" value={data.sector} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderSectorIndustry)} />
+          <Input label={`${getText(lang, UIStringKeys.LabelCustomerType)} *`} id="customerType" name="customerType" value={data.customerType} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderCustomerType)} />
+          <Input label={`${getText(lang, UIStringKeys.LabelMarketCategory)} *`} id="market" name="market" value={data.market} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderMarketCategory)} />
+          <Input label={`${getText(lang, UIStringKeys.LabelSectorIndustry)} *`} id="sector" name="sector" value={data.sector} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderSectorIndustry)} />
           <Input label={getText(lang, UIStringKeys.LabelProductService)} id="productOrService" name="productOrService" value={data.productOrService} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderProductService)} />
         </Card>
 
         <Card title={getText(lang, UIStringKeys.HeaderProblemConsumerContext)}>
           <AIHelperTextarea
-            id="coreProblemToSolve"
-            name="coreProblemToSolve"
-            label={coreProblemLabel}
-            apiLabel={coreProblemLabel}
-            value={data.coreProblemToSolve}
+            id="businessChallenge"
+            name="businessChallenge"
+            label={`${getText(lang, UIStringKeys.LabelBusinessChallenge)} *`}
+            apiLabel={getText(lang, UIStringKeys.LabelBusinessChallenge)}
+            value={data.businessChallenge}
             onChange={handleChange}
-            placeholder={getText(lang, UIStringKeys.PlaceholderCoreProblem)}
+            placeholder={getText(lang, UIStringKeys.PlaceholderBusinessChallenge)}
+            diagnosisContext={data}
+            lang={lang}
+          />
+          <AIHelperTextarea
+            id="customerChallenge"
+            name="customerChallenge"
+            label={`${getText(lang, UIStringKeys.LabelCustomerChallenge)} *`}
+            apiLabel={getText(lang, UIStringKeys.LabelCustomerChallenge)}
+            value={data.customerChallenge}
+            onChange={handleChange}
+            placeholder={getText(lang, UIStringKeys.PlaceholderCustomerChallenge)}
             diagnosisContext={data}
             lang={lang}
           />

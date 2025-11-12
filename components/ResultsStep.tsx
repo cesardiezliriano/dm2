@@ -25,7 +25,8 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
     output += `**${getText(lang, UIStringKeys.LabelMarketCategory)}:** ${data.diagnosis.market || getText(lang, UIStringKeys.TextNotSet)}\n`;
     output += `**${getText(lang, UIStringKeys.LabelSectorIndustry)}:** ${data.diagnosis.sector || getText(lang, UIStringKeys.TextNotSet)}\n`;
     output += `**${getText(lang, UIStringKeys.LabelProductService)}:** ${data.diagnosis.productOrService || getText(lang, UIStringKeys.TextNotSet)}\n`;
-    output += `**${getText(lang, UIStringKeys.LabelCoreProblem)}:** ${data.diagnosis.coreProblemToSolve || getText(lang, UIStringKeys.TextNotSet)}\n`;
+    output += `**${getText(lang, UIStringKeys.LabelBusinessChallenge)}:** ${data.diagnosis.businessChallenge || getText(lang, UIStringKeys.TextNotSet)}\n`;
+    output += `**${getText(lang, UIStringKeys.LabelCustomerChallenge)}:** ${data.diagnosis.customerChallenge || getText(lang, UIStringKeys.TextNotSet)}\n`;
     output += `**${getText(lang, UIStringKeys.LabelConsumerInvolvement)}:** ${data.diagnosis.consumerContext.involvement || getText(lang, UIStringKeys.TextNotSet)}\n`;
     output += `**${getText(lang, UIStringKeys.LabelFunnelStage)}:** ${data.diagnosis.consumerContext.funnelStage || getText(lang, UIStringKeys.TextNotSet)}\n`;
     output += `**${getText(lang, UIStringKeys.LabelConsumerBarriers)}:** ${data.diagnosis.consumerContext.barriers || getText(lang, UIStringKeys.TextNotSet)}\n`;
@@ -95,7 +96,8 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
             <li><strong>{getText(lang, UIStringKeys.LabelMarketCategory)}:</strong> {data.diagnosis.market || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
             <li><strong>{getText(lang, UIStringKeys.LabelSectorIndustry)}:</strong> {data.diagnosis.sector || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
             <li><strong>{getText(lang, UIStringKeys.LabelProductService)}:</strong> {data.diagnosis.productOrService || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelCoreProblem)}:</strong> {data.diagnosis.coreProblemToSolve || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
+            <li><strong>{getText(lang, UIStringKeys.LabelBusinessChallenge)}:</strong> {data.diagnosis.businessChallenge || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
+            <li><strong>{getText(lang, UIStringKeys.LabelCustomerChallenge)}:</strong> {data.diagnosis.customerChallenge || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
             <li><strong>{getText(lang, UIStringKeys.LabelConsumerInvolvement)}:</strong> {data.diagnosis.consumerContext.involvement || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
             <li><strong>{getText(lang, UIStringKeys.LabelFunnelStage)}:</strong> {data.diagnosis.consumerContext.funnelStage || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
             <li><strong>{getText(lang, UIStringKeys.LabelConsumerBarriers)}:</strong> {data.diagnosis.consumerContext.barriers || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>

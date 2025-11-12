@@ -32,8 +32,10 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
 }) => {
   const [groundingChunks, setGroundingChunks] = React.useState<GroundingChunk[] | undefined>(undefined);
 
+  const isDiagnosisIncomplete = !diagnosisData.customerType || !diagnosisData.market || !diagnosisData.sector || !diagnosisData.businessChallenge || !diagnosisData.customerChallenge;
+
   const handleGenerateChallenge = useCallback(async () => {
-    if (!diagnosisData.customerType || !diagnosisData.market || !diagnosisData.sector || !diagnosisData.coreProblemToSolve) {
+    if (isDiagnosisIncomplete) {
       setError(getText(lang, UIStringKeys.ErrorDiagnosisNotComplete)); 
       return;
     }
@@ -50,7 +52,7 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [diagnosisData, onUpdateChallenge, setLoading, setError, lang]);
+  }, [diagnosisData, onUpdateChallenge, setLoading, setError, lang, isDiagnosisIncomplete]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -82,7 +84,7 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
       <Button
         onClick={handleGenerateChallenge}
         isLoading={isLoading}
-        disabled={isLoading || !diagnosisData.customerType || !diagnosisData.market || !diagnosisData.sector || !diagnosisData.coreProblemToSolve}
+        disabled={isLoading || isDiagnosisIncomplete}
         icon={<LightBulbIcon className="w-5 h-5" />}
         variant="primary"
       >
@@ -90,6 +92,14 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
             ? getText(lang, UIStringKeys.ButtonRegenerateChallenge) 
             : getText(lang, UIStringKeys.ButtonGenerateStrategicChallenge)}
       </Button>
+      
+      {isDiagnosisIncomplete && !isLoading && (
+        <div className="text-center mt-4 p-4 bg-[#F8F8F8] border border-[#DDDDDD] rounded-lg animate-fadeIn" role="alert">
+            <p className="text-sm text-[#6D7475] font-['Open_Sans']">
+                {getText(lang, UIStringKeys.ErrorDiagnosisNotComplete)}
+            </p>
+        </div>
+      )}
 
       {error && <p className="text-[#F54963] bg-[#F54963]/10 p-3 rounded-md animate-shake font-['Open_Sans']">{error}</p>}
       

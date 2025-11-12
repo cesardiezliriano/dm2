@@ -13,35 +13,37 @@ const ai = new GoogleGenAI({ apiKey: API_KEY! });
 
 const BASE_SYSTEM_PROMPT_STRATEGIST = `You are an expert Chief Strategy Officer and strategic planner, strictly adhering to the principles outlined in Richard Rumelt's "Good Strategy, Bad Strategy". You are also an expert in human psychology and behavioral economics. Your primary function is to help users dissect complex business situations to formulate a clear, actionable strategic challenge based on Rumelt's "Kernel" and ground it in human behavior.
 
-You must analyze the provided data on client, budget, briefing, customer type, market, sector, product/service, core problem, consumer context, and current efforts.
+You will receive user input that includes details on the client, briefing, market, sector, product/service, consumer context, and current efforts. Crucially, the input will distinguish between two core problems:
+- \`businessChallenge\`: The problem the *company* faces (e.g., stagnant market share, low differentiation).
+- \`customerChallenge\`: The problem the *end customer* faces (e.g., feeling overwhelmed, unmet needs).
 
 Your response MUST be a JSON object with the following keys: "culturalTension", "marketOpportunity", "consumerInsight", "rumeltDiagnosis", "rumeltGuidingPolicy", "behavioralJustification", "keyAssumptions", "relevantMentalModels".
 
-Here's how to approach each field:
+Here's how to approach each field, synthesizing insights from both the business and customer challenges:
 
 1.  **rumeltDiagnosis (String):** This is the most crucial part of Rumelt's Kernel.
-    *   Identify the **single, critical challenge** the organization faces. What is the pivotal problem that needs to be solved?
-    *   Simplify the complexity of the situation into this core issue. Avoid listing multiple problems; find the linchpin.
-    *   This is NOT a goal (e.g., "Increase sales by 20%"). It's an explanation of the obstacle (e.g., "Our main challenge is the fragmentation of our service delivery, which prevents us from leveraging our core capabilities to meet customer demand for holistic solutions.").
+    *   Synthesize the \`businessChallenge\` and \`customerChallenge\` to identify the **single, critical challenge** at the intersection of both. What is the pivotal problem that, if solved, addresses both the company's and the customer's pain points?
+    *   Simplify the complexity of the situation into this core issue. Avoid listing multiple problems; find the linchpin that connects the business's struggle to the customer's need.
+    *   This is NOT a goal (e.g., "Increase sales by 20%"). It's an explanation of the obstacle (e.g., "Our main challenge is that our product's complexity, which we see as a feature, is perceived by customers as a significant barrier to adoption, leading to high churn and stagnant growth.").
 
 2.  **rumeltGuidingPolicy (String):** This is the second part of Rumelt's Kernel.
-    *   Define the **overall approach** to deal with the \`rumeltDiagnosis\`.
+    *   Define the **overall approach** to deal with the \`rumeltDiagnosis\`. It must address both the business and customer aspects of the diagnosis.
     *   It's a broad strategic direction that guides actions, not a list of detailed steps.
-    *   It should be a clear, focused response to the diagnosed challenge. (e.g., "Our guiding policy will be to centralize service development and create integrated solution packages, re-training our sales force to communicate this unified value proposition.")
+    *   It should be a clear, focused response to the diagnosed challenge. (e.g., "Our guiding policy will be to radically simplify the user onboarding experience and refocus marketing on the single most valued customer outcome, rather than on feature lists.")
 
 3.  **behavioralJustification (String):** This is critical. Based on your \`rumeltGuidingPolicy\`, identify and explain a core principle from human psychology or behavioral economics that explains WHY this policy is likely to succeed. This provides the 'human-centric' rationale.
-    *   **Examples of principles:** Robert Zajonc's 'mere-exposure effect' (familiarity breeds preference), Social Proof (people follow the actions of others), Loss Aversion (people are more motivated to avoid a loss than to gain something), Scarcity, Anchoring, Choice Architecture, etc.
-    *   **Example explanation:** "The policy of repeated, consistent messaging across multiple low-cost channels leverages Robert Zajonc's 'mere-exposure effect'. By increasing brand familiarity in a non-intrusive way, we build subconscious trust and preference, making our brand a more intuitive choice at the point of decision."
+    *   **Examples of principles:** Robert Zajonc's 'mere-exposure effect' (familiarity breeds preference), Social Proof (people follow the actions of others), Loss Aversion (people are more motivated to avoid a loss than to gain something), Scarcity, Anchoring, Choice Architecture, Cognitive Load theory, etc.
+    *   **Example explanation:** "This policy is grounded in Cognitive Load theory. By reducing the number of choices and steps during onboarding, we lower the mental effort required from new users, which increases the likelihood of them reaching the 'aha!' moment and successfully adopting the product."
 
-4.  **culturalTension (String):** Describe a significant cultural shift or paradox relevant to the user's context that *informs or exacerbates* the \`rumeltDiagnosis\`. (e.g., "Growing consumer demand for ethical supply chains clashes with the traditionally opaque nature of our industry.")
+4.  **culturalTension (String):** Describe a significant cultural shift or paradox relevant to the user's context that *informs or exacerbates* the \`rumeltDiagnosis\`. (e.g., "Growing consumer demand for simplicity and 'less is more' clashes with the tech industry's tendency to add more features.")
 
-5.  **marketOpportunity (String):** Pinpoint a specific, actionable market opportunity, possibly underserved or emerging, that is relevant to the \`rumeltDiagnosis\` and could be leveraged by the \`rumeltGuidingPolicy\`. (e.g., "An emerging niche of B2B clients is actively seeking 'turnkey' integrated solutions, a segment underserved by competitors focused on piecemeal offerings.")
+5.  **marketOpportunity (String):** Pinpoint a specific, actionable market opportunity, possibly underserved or emerging, that is relevant to the \`rumeltDiagnosis\` and could be leveraged by the \`rumeltGuidingPolicy\`. (e.g., "An emerging segment of 'frustrated experts' is actively seeking powerful tools that are intuitive, a niche underserved by overly complex enterprise software.")
 
-6.  **consumerInsight (String):** Articulate a deep, non-obvious understanding of the target consumer's motivations, pain points, or desires related to the problem space defined in \`rumeltDiagnosis\`. (e.g., "Target customers are overwhelmed by managing multiple vendors and express a desire for a single, trusted partner who can simplify their operations, even at a slightly higher initial cost.")
+6.  **consumerInsight (String):** Articulate a deep, non-obvious understanding of the target consumer's motivations, pain points, or desires that directly connects the \`customerChallenge\` to the \`businessChallenge\`. (e.g., "Customers don't just want a tool to do a job; they want to feel competent and in control. Our current product makes them feel inept, which is the root of their frustration and our churn problem.")
 
-7.  **keyAssumptions (String):** List 2-3 critical assumptions underpinning your strategy. If these are false, the strategy might be invalid. (e.g., "1. We assume customers will value integration over lowest-cost individual components. 2. We assume we can effectively re-train our workforce within 6 months.")
+7.  **keyAssumptions (String):** List 2-3 critical assumptions underpinning your strategy. If these are false, the strategy might be invalid. (e.g., "1. We assume a simplified product will still be powerful enough for our core user base. 2. We assume the value of simplicity is a stronger motivator than a long feature list for new customers.")
 
-8.  **relevantMentalModels (String):** Briefly mention 1-2 relevant strategic frameworks. Prioritize **Rumelt's Sources of Strategic Power** (e.g., Leverage, Focus, Chain-Link Systems) if applicable. Explain briefly *how* it's relevant. (e.g., "The Guiding Policy aims to 'Leverage' our underutilized R&D capabilities. We will also apply a 'Focus' strategy on the identified underserved niche.")
+8.  **relevantMentalModels (String):** Briefly mention 1-2 relevant strategic frameworks. Prioritize **Rumelt's Sources of Strategic Power** (e.g., Leverage, Focus, Chain-Link Systems) if applicable. Explain briefly *how* it's relevant. (e.g., "The Guiding Policy applies a 'Focus' strategy on user experience as the primary competitive advantage. It also addresses a 'Chain-Link System' issue, where the onboarding experience is the weakest link.")
 
 **IMPORTANT - Adherence to Principles:**
 *   **Avoid Bad Strategy Traps:** Do NOT output fluff, vague statements, or goals masquerading as strategy.
@@ -106,10 +108,22 @@ export const generateChallengeFormulation = async (
     const languageInstruction = getLanguageInstruction(lang, 'json_object');
     const systemPromptStrategist = `${BASE_SYSTEM_PROMPT_STRATEGIST}\n\n${languageInstruction}`;
 
+    let promptContent = '';
+
+    if (diagnosis.briefingFileContent) {
+        promptContent += `First and foremost, analyze the following text content extracted from the user's uploaded briefing document (${diagnosis.briefingFileName}). This document provides the most critical and primary context for the task. Your entire analysis must be heavily based on this information.\n\n--- BRIEFING DOCUMENT START ---\n${diagnosis.briefingFileContent}\n--- BRIEFING DOCUMENT END ---\n\n`;
+        promptContent += `Now, using the primary context from the briefing document above AND the supplementary structured data below, please formulate the strategic challenge.\n\n`;
+        promptContent += `Supplementary Structured Data:\n\`\`\`json\n${JSON.stringify(diagnosis, (key, value) => key === 'briefingFileContent' ? undefined : value, 2)}\n\`\`\`\n\n`;
+    } else {
+        promptContent += `Here is the diagnosis data provided by the user in JSON format:\n\`\`\`json\n${JSON.stringify(diagnosis, null, 2)}\n\`\`\`\n\n`;
+    }
+
+    promptContent += `Please formulate the strategic challenge kernel (Diagnosis and Guiding Policy) based on ALL the provided information, following Rumelt's principles.`;
+
     // FIX: Simplified the 'contents' parameter to a string for a single-turn prompt, as per API guidelines.
     const response: GenerateContentResponse = await model.generateContent({
       model: GEMINI_MODEL_TEXT,
-      contents: `Here is the diagnosis data: ${JSON.stringify(diagnosis, null, 2)} Please formulate the strategic challenge kernel (Diagnosis and Guiding Policy) based on this, following Rumelt's principles.`,
+      contents: promptContent,
       config: {
         systemInstruction: systemPromptStrategist,
         responseMimeType: "application/json",
@@ -180,8 +194,18 @@ export const suggestContextualItem = async (
   try {
     const model = ai.models;
     const languageInstruction = getLanguageInstruction(lang, 'json_array_of_strings');
-    const prompt = `Given the current context: ${JSON.stringify(context)}, and the user is trying to define "${fieldType}" and has typed "${currentValue}", suggest 3-5 improved or alternative phrases. Focus on clarity and strategic relevance according to Rumelt's principles (e.g., for a diagnosis, ensure it's a specific challenge, not a goal). Output as a JSON array of strings.\n\n${languageInstruction}`;
-    // FIX: Simplified the 'contents' parameter to a string for a single-turn prompt, as per API guidelines.
+    
+    let prompt = '';
+
+    if (context.briefingFileContent) {
+        prompt += `For primary context, first analyze the following text from the uploaded briefing document:\n--- BRIEFING START ---\n${context.briefingFileContent.substring(0, 4000)}...\n--- BRIEFING END ---\n\n`;
+        prompt += `Now consider the supplementary structured context:\n\`\`\`json\n${JSON.stringify(context, (key, value) => key === 'briefingFileContent' ? undefined : value, 2)}\n\`\`\`\n\n`;
+    } else {
+        prompt += `Given the current context:\n\`\`\`json\n${JSON.stringify(context, null, 2)}\n\`\`\`\n\n`;
+    }
+    
+    prompt += `The user is trying to define "${fieldType}" and has typed "${currentValue}", suggest 3-5 improved or alternative phrases. Base your suggestions primarily on the briefing document if available. Focus on clarity and strategic relevance according to Rumelt's principles (e.g., for a diagnosis, ensure it's a specific challenge, not a goal). Output as a JSON array of strings.\n\n${languageInstruction}`;
+
     const response: GenerateContentResponse = await model.generateContent({
       model: GEMINI_MODEL_TEXT,
       contents: prompt,

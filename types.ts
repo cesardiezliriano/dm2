@@ -18,11 +18,13 @@ export interface DiagnosisData {
   clientName: string; 
   projectBudget: string; 
   briefingFileName: string | null; 
+  briefingFileContent: string | null;
   customerType: string;
   market: string;
   sector: string;
   productOrService: string;
-  coreProblemToSolve: string;
+  businessChallenge: string;
+  customerChallenge: string;
   consumerContext: {
     involvement: InvolvementLevel | "";
     funnelStage: FunnelStage | "";
@@ -159,6 +161,7 @@ export enum UIStringKeys {
   LabelUploadBriefing = "LabelUploadBriefing", 
   PlaceholderNoFileSelected = "PlaceholderNoFileSelected", 
   FileSelected = "FileSelected", 
+  FileParsing = "FileParsing",
   LabelProjectBudget = "LabelProjectBudget", 
   LabelCustomerType = "LabelCustomerType", 
   PlaceholderCustomerType = "PlaceholderCustomerType", 
@@ -168,8 +171,10 @@ export enum UIStringKeys {
   PlaceholderSectorIndustry = "PlaceholderSectorIndustry", 
   LabelProductService = "LabelProductService", 
   PlaceholderProductService = "PlaceholderProductService", 
-  LabelCoreProblem = "LabelCoreProblem", 
-  PlaceholderCoreProblem = "PlaceholderCoreProblem", 
+  LabelBusinessChallenge = "LabelBusinessChallenge",
+  PlaceholderBusinessChallenge = "PlaceholderBusinessChallenge",
+  LabelCustomerChallenge = "LabelCustomerChallenge",
+  PlaceholderCustomerChallenge = "PlaceholderCustomerChallenge",
   LabelConsumerInvolvement = "LabelConsumerInvolvement", 
   LabelFunnelStage = "LabelFunnelStage", 
   LabelConsumerBarriers = "LabelConsumerBarriers", 
