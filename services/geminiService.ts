@@ -3,13 +3,13 @@ import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { DiagnosisData, FormulatedChallenge, GroundingChunk, Language, UIStringKeys } from '../types';
 import { GEMINI_MODEL_TEXT, getText } from '../constants';
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  console.error("API_KEY environment variable not found. Please set it up to use the Gemini API.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY! }); 
+const getAiClient = () => {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error("API Key not found. Please ensure it is configured correctly.");
+    }
+    return new GoogleGenAI({ apiKey });
+};
 
 const BASE_SYSTEM_PROMPT_STRATEGIST = `You are an expert Chief Strategy Officer and strategic planner, strictly adhering to the principles outlined in Richard Rumelt's "Good Strategy, Bad Strategy". You are also an expert in human psychology and behavioral economics. Your primary function is to help users dissect complex business situations to formulate a clear, actionable strategic challenge based on Rumelt's "Kernel" and ground it in human behavior.
 
@@ -104,6 +104,7 @@ export const generateChallengeFormulation = async (
   lang: Language
 ): Promise<{ formulation: FormulatedChallenge; groundingChunks?: GroundingChunk[] }> => {
   try {
+    const ai = getAiClient();
     const model = ai.models;
     const languageInstruction = getLanguageInstruction(lang, 'json_object');
     const systemPromptStrategist = `${BASE_SYSTEM_PROMPT_STRATEGIST}\n\n${languageInstruction}`;
@@ -144,6 +145,9 @@ export const generateChallengeFormulation = async (
     if (error instanceof Error && error.message.startsWith("Invalid JSON response")) {
         throw error;
     }
+    if (error instanceof Error && error.message.includes("API Key")) {
+        throw error;
+    }
     throw new Error(getText(lang, UIStringKeys.ErrorGeneric) + (error instanceof Error ? `: ${error.message}` : ''));
   }
 };
@@ -153,6 +157,7 @@ export const generateSmartPrompts = async (
   lang: Language
 ): Promise<{ prompts: string[]; groundingChunks?: GroundingChunk[] }> => {
   try {
+    const ai = getAiClient();
     const model = ai.models;
     const languageInstruction = getLanguageInstruction(lang, 'json_array_of_strings');
     const systemPromptPromptGenerator = `${BASE_SYSTEM_PROMPT_PROMPT_GENERATOR}\n\n${languageInstruction}`;
@@ -181,6 +186,9 @@ export const generateSmartPrompts = async (
      if (error instanceof Error && error.message.startsWith("Invalid JSON response")) {
         throw error;
     }
+    if (error instanceof Error && error.message.includes("API Key")) {
+        throw error;
+    }
     throw new Error(getText(lang, UIStringKeys.ErrorGeneric) + (error instanceof Error ? `: ${error.message}` : ''));
   }
 };
@@ -192,6 +200,7 @@ export const suggestContextualItem = async (
   lang: Language
 ): Promise<string[]> => {
   try {
+    const ai = getAiClient();
     const model = ai.models;
     const languageInstruction = getLanguageInstruction(lang, 'json_array_of_strings');
     
