@@ -90,6 +90,7 @@ const App: React.FC = () => {
         return (
           <PromptGenerationStep
             challengeData={sessionData.challenge}
+            diagnosisData={sessionData.diagnosis}
             generatedPrompts={sessionData.generatedPrompts}
             onUpdatePrompts={updatePrompts}
             setLoading={setIsLoading}

@@ -1,232 +1,298 @@
 
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { DiagnosisData, FormulatedChallenge, GroundingChunk, Language, UIStringKeys } from '../types';
-import { GEMINI_MODEL_TEXT, getText } from '../constants';
+import { GoogleGenAI, Type } from "@google/genai";
+import { DiagnosisData, FormulatedChallenge, GroundingChunk, Language } from '../types';
+import { GEMINI_MODEL_TEXT } from '../constants';
 
 const getAiClient = () => {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-      throw new Error("API Key not found. Please ensure it is configured correctly.");
-    }
-    return new GoogleGenAI({ apiKey });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("API Key is missing in process.env.API_KEY");
+    throw new Error("API Key not found. Please ensure it is configured correctly in the environment.");
+  }
+  return new GoogleGenAI({ apiKey });
 };
 
-const BASE_SYSTEM_PROMPT_STRATEGIST = `You are an expert Chief Strategy Officer and strategic planner, strictly adhering to the principles outlined in Richard Rumelt's "Good Strategy, Bad Strategy". You are also an expert in human psychology and behavioral economics. Your primary function is to help users dissect complex business situations to formulate a clear, actionable strategic challenge based on Rumelt's "Kernel" and ground it in human behavior.
+// --- PERSONAS & SYSTEM PROMPTS ---
 
-You will receive user input that includes details on the client, briefing, market, sector, product/service, consumer context, and current efforts. Crucially, the input will distinguish between two core problems:
-- \`businessChallenge\`: The problem the *company* faces (e.g., stagnant market share, low differentiation).
-- \`customerChallenge\`: The problem the *end customer* faces (e.g., feeling overwhelmed, unmet needs).
+const BASE_SYSTEM_PROMPT_STRATEGIST = `You are an elite **Strategic Media Planner** and strategist. You combine the rigorous strategy framework of Richard Rumelt ("Good Strategy, Bad Strategy") with the sharp, audience-centric focus of a top-tier media agency planner.
 
-Your response MUST be a JSON object with the following keys: "culturalTension", "marketOpportunity", "consumerInsight", "rumeltDiagnosis", "rumeltGuidingPolicy", "behavioralJustification", "keyAssumptions", "relevantMentalModels".
+Your goal is to formulate a "Strategic Challenge Kernel" that identifies critical bottlenecks in consumer attention, media behavior, and brand connection, and proposes a guiding policy to overcome them.
 
-Here's how to approach each field, synthesizing insights from both the business and customer challenges:
+**Your Lens (The Media Planner Bias):**
+*   **Attention & Relevance:** Focus on why the audience isn't paying attention or why the brand isn't relevant in their life context.
+*   **Touchpoints:** Think about where the consumer actually exists (digital ecosystems, physical spaces) and the frictions there.
+*   **Behavioral Triggers:** Use psychology to understand *why* they act (or don't act) in specific channels.
+*   **Cultural Context:** Look for trends in culture and media consumption that impact the brand.
 
-1.  **rumeltDiagnosis (String):** This is the most crucial part of Rumelt's Kernel.
-    *   Synthesize the \`businessChallenge\` and \`customerChallenge\` to identify the **single, critical challenge** at the intersection of both. What is the pivotal problem that, if solved, addresses both the company's and the customer's pain points?
-    *   Simplify the complexity of the situation into this core issue. Avoid listing multiple problems; find the linchpin that connects the business's struggle to the customer's need.
-    *   This is NOT a goal (e.g., "Increase sales by 20%"). It's an explanation of the obstacle (e.g., "Our main challenge is that our product's complexity, which we see as a feature, is perceived by customers as a significant barrier to adoption, leading to high churn and stagnant growth.").
+**The Rumelt Framework:**
+1.  **Diagnosis:** The specific challenge. Not just "low sales", but "fragmented attention in a saturated category".
+2.  **Guiding Policy:** The approach. How do we navigate the media landscape to solve the diagnosis?
 
-2.  **rumeltGuidingPolicy (String):** This is the second part of Rumelt's Kernel.
-    *   Define the **overall approach** to deal with the \`rumeltDiagnosis\`. It must address both the business and customer aspects of the diagnosis.
-    *   It's a broad strategic direction that guides actions, not a list of detailed steps.
-    *   It should be a clear, focused response to the diagnosed challenge. (e.g., "Our guiding policy will be to radically simplify the user onboarding experience and refocus marketing on the single most valued customer outcome, rather than on feature lists.")
+**Operational Rules:**
+1.  **Use Google Search:** You have access to Google Search. You MUST use it to find REAL, current cultural tensions, market data, and consumer behaviors to support your diagnosis.
+2.  **Format:** You MUST organize your response using Markdown headers exactly as requested. Do NOT use JSON for the main text response, as it conflicts with the Search tool.
+`;
 
-3.  **behavioralJustification (String):** This is critical. Based on your \`rumeltGuidingPolicy\`, identify and explain a core principle from human psychology or behavioral economics that explains WHY this policy is likely to succeed. This provides the 'human-centric' rationale.
-    *   **Examples of principles:** Robert Zajonc's 'mere-exposure effect' (familiarity breeds preference), Social Proof (people follow the actions of others), Loss Aversion (people are more motivated to avoid a loss than to gain something), Scarcity, Anchoring, Choice Architecture, Cognitive Load theory, etc.
-    *   **Example explanation:** "This policy is grounded in Cognitive Load theory. By reducing the number of choices and steps during onboarding, we lower the mental effort required from new users, which increases the likelihood of them reaching the 'aha!' moment and successfully adopting the product."
+const BASE_SYSTEM_PROMPT_PROMPT_GENERATOR = `You are an expert Creative Media Planner. Generate 5-7 smart, actionable ideation prompts for a media and creative campaign based on the provided strategy.
+Focus on channel innovation, message distinctiveness, and behavioral triggers.
+Return a JSON array of strings.`;
 
-4.  **culturalTension (String):** Describe a significant cultural shift or paradox relevant to the user's context that *informs or exacerbates* the \`rumeltDiagnosis\`. (e.g., "Growing consumer demand for simplicity and 'less is more' clashes with the tech industry's tendency to add more features.")
+const BASE_SYSTEM_PROMPT_HELPER = `You are a helpful Strategic Media Planner assistant. Suggest 3 short, high-quality completions for a strategic brief field, keeping in mind media and audience context. Return a JSON array of strings.`;
 
-5.  **marketOpportunity (String):** Pinpoint a specific, actionable market opportunity, possibly underserved or emerging, that is relevant to the \`rumeltDiagnosis\` and could be leveraged by the \`rumeltGuidingPolicy\`. (e.g., "An emerging segment of 'frustrated experts' is actively seeking powerful tools that are intuitive, a niche underserved by overly complex enterprise software.")
+// --- UTILITIES ---
 
-6.  **consumerInsight (String):** Articulate a deep, non-obvious understanding of the target consumer's motivations, pain points, or desires that directly connects the \`customerChallenge\` to the \`businessChallenge\`. (e.g., "Customers don't just want a tool to do a job; they want to feel competent and in control. Our current product makes them feel inept, which is the root of their frustration and our churn problem.")
-
-7.  **keyAssumptions (String):** List 2-3 critical assumptions underpinning your strategy. If these are false, the strategy might be invalid. (e.g., "1. We assume a simplified product will still be powerful enough for our core user base. 2. We assume the value of simplicity is a stronger motivator than a long feature list for new customers.")
-
-8.  **relevantMentalModels (String):** Briefly mention 1-2 relevant strategic frameworks. Prioritize **Rumelt's Sources of Strategic Power** (e.g., Leverage, Focus, Chain-Link Systems) if applicable. Explain briefly *how* it's relevant. (e.g., "The Guiding Policy applies a 'Focus' strategy on user experience as the primary competitive advantage. It also addresses a 'Chain-Link System' issue, where the onboarding experience is the weakest link.")
-
-**IMPORTANT - Adherence to Principles:**
-*   **Avoid Bad Strategy Traps:** Do NOT output fluff, vague statements, or goals masquerading as strategy.
-*   **Coherence:** Ensure the Diagnosis, Guiding Policy, Behavioral Justification, and supporting insights are logically connected.
-*   **Action-Oriented:** The Guiding Policy should clearly suggest a path for action.
-*   **Conciseness & Profundity:** Be brief but insightful.`;
-
-const BASE_SYSTEM_PROMPT_PROMPT_GENERATOR = `You are an expert prompt engineer and creative strategist, guided by Richard Rumelt's "Good Strategy, Bad Strategy". Your task is to generate insightful and actionable prompts based on a formulated strategic challenge, specifically its \`rumeltDiagnosis\` and \`rumeltGuidingPolicy\`. These prompts are intended to spark ideation for "Coherent Actions" – the third part of Rumelt's Kernel – which could be marketing campaigns, new product features, service innovations, or compelling messaging.
-
-The input will be a JSON object containing \`rumeltDiagnosis\` and \`rumeltGuidingPolicy\`, among other fields. Your focus is on these two.
-
-The prompts you generate should:
-1.  **Directly address the \`rumeltDiagnosis\`:** How can the organization overcome this specific challenge?
-2.  **Operationalize the \`rumeltGuidingPolicy\`:** How can this general approach be translated into concrete steps or initiatives?
-3.  **Lead to Coherent Actions:** Encourage ideas that are aligned with each other and the guiding policy, avoiding contradictions.
-4.  **Be Open-ended yet Focused:** Allow for creative solutions while staying within the strategic boundaries set by the diagnosis and guiding policy.
-5.  **Action-Oriented:** Use phrasing like "How might we...", "What specific steps could we take to...", "Design a [campaign/feature/service] that embodies [aspect of Guiding Policy] to solve [part of Diagnosis]...".
-6.  **Diverse:** Explore different angles and types of actions.
-7.  **Thought-Provoking & Stimulating:** Encourage deep thinking.
-8.  **Consider \`keyAssumptions\` and \`relevantMentalModels\` (if provided):** Prompts could explore ways to test key assumptions or apply the mentioned mental models/sources of power. For example, "How can we test the assumption that [key assumption] while pursuing [Guiding Policy]?" or "In what ways can we apply [Rumelt's Source of Power, e.g., 'Leverage'] to execute our [Guiding Policy] more effectively?"
-
-Your response MUST be a JSON array of 3-5 unique string prompts. Each prompt should be a clear, concise question or instruction.
-
-Avoid generic prompts. They must be tailored to the provided \`rumeltDiagnosis\` and \`rumeltGuidingPolicy\`.`;
-
-
-const getLanguageInstruction = (lang: Language, outputType: 'json_object' | 'json_array_of_strings'): string => {
-  const languageName = lang === Language.ES ? "español" : "English";
-  if (outputType === 'json_object') {
-    return lang === Language.ES 
-      ? `IMPORTANTE: Tu respuesta COMPLETA, incluyendo todas las claves y valores de cadena en la salida JSON, DEBE estar en ${languageName}.`
-      : `IMPORTANT: Your entire response, including all keys and string values in the JSON output, MUST be in ${languageName}.`;
-  }
-  // json_array_of_strings
-  return lang === Language.ES
-    ? `IMPORTANTE: Tu respuesta COMPLETA, que es un array JSON de cadenas de texto, DEBE estar en ${languageName}. Cada cadena de texto en el array debe estar en ${languageName}.`
-    : `IMPORTANT: Your entire response, which is a JSON array of strings, MUST be in ${languageName}. Each string in the array must be in ${languageName}.`;
+/**
+ * Robust Helper function to extract sections from Markdown text.
+ * Handles various header formats (e.g., ## Header, ### Header, ## **Header**, ## 1. Header)
+ */
+const extractSection = (text: string, header: string): string => {
+  if (!text) return "";
+  
+  // Escape special regex characters in the header name
+  const safeHeader = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  // Regex Breakdown:
+  // #{1,6}         -> Match 1 to 6 hashes (##, ###, etc.)
+  // \s*            -> Match optional whitespace
+  // (?:\d+\.?\s*)? -> Non-capturing group for optional numbering (e.g., "1. " or "1 ")
+  // \**            -> Match optional bold marker "**" start
+  // ${safeHeader}  -> The specific header text
+  // \**            -> Match optional bold marker "**" end
+  // [:]?           -> Match optional colon ":"
+  // .*             -> Match rest of the header line
+  // \n             -> Match newline
+  // ([\s\S]*?)     -> Capture Group 1: The content (non-greedy)
+  // (?=(?:#{1,6}\s|$)) -> Lookahead: Stop before the next header (hash + space) or end of string
+  const regex = new RegExp(
+    `#{1,6}\\s*(?:\\d+\\.?\\s*)?\\**${safeHeader}\\**[:]?[\\s\\S]*?([\\s\\S]*?)(?=(?:#{1,6}\\s|$))`,
+    'i'
+  );
+  
+  const match = text.match(regex);
+  return match && match[1] ? match[1].trim() : "";
 };
 
+/**
+ * Cleans JSON string to extract array.
+ * Robustly handles markdown code blocks and extra text.
+ */
+const cleanJsonArrayString = (text: string): string => {
+  if (!text) return "[]";
 
-const parseJsonFromMarkdown = <T,>(markdownJson: string): T | null => {
-  let jsonStr = markdownJson.trim();
-  const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s;
-  const match = jsonStr.match(fenceRegex);
-  if (match && match[2]) {
-    jsonStr = match[2].trim();
+  // Find the first '[' and last ']'
+  const firstBracket = text.indexOf('[');
+  const lastBracket = text.lastIndexOf(']');
+
+  if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+    return text.substring(firstBracket, lastBracket + 1);
   }
+
+  // Fallback: try to strip markdown code blocks if brackets aren't clear
+  return text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+};
+
+// --- API FUNCTIONS ---
+
+export const generateChallengeFormulation = async (data: DiagnosisData, lang: Language): Promise<{ formulation: FormulatedChallenge, groundingChunks?: GroundingChunk[] }> => {
+  const ai = getAiClient();
+
+  const userPrompt = `
+    **Context:**
+    - Language: ${lang}
+    - Client: ${data.clientName}
+    - Project Budget: ${data.projectBudget || "Not defined"}
+    - Briefing Content: ${data.briefingFileContent ? data.briefingFileContent.substring(0, 4000) + "..." : "Not provided"}
+    - Customer Type: ${data.customerType}
+    - Market/Category: ${data.market}
+    - Sector: ${data.sector}
+    - Product/Service: ${data.productOrService}
+    - Business Challenge: ${data.businessChallenge}
+    - Customer Challenge: ${data.customerChallenge}
+    - Consumer Context: Involvement (${data.consumerContext.involvement}), Funnel Stage (${data.consumerContext.funnelStage}), Barriers (${data.consumerContext.barriers})
+    - Current Strategy: ${data.currentStrategyAttempt}
+
+    **Task:**
+    As a Strategic Media Planner, use Google Search to validate context and then formulate the Rumelt Strategic Challenge Kernel.
+    
+    **Output Format (MANDATORY):**
+    Please provide the response using Markdown headers (e.g. ## Header Name). Do not use code blocks. Just text under headers.
+
+    ## Cultural Tension
+    (Describe a significant cultural shift, media trend, or paradox relevant to the user's context found via search)
+
+    ## Market Opportunity
+    (A specific, actionable market or media opportunity found via search)
+
+    ## Consumer Insight
+    (A deep, non-obvious understanding of the target consumer's motivations and media behaviors)
+
+    ## Rumelt Diagnosis
+    (The critical challenge at the intersection of business/customer problems. The 'What's holding us back' from a media/attention perspective)
+
+    ## Rumelt Guiding Policy
+    (The overall strategic approach to overcome the diagnosed challenge. The 'How we will overcome it' using channels and messaging)
+
+    ## Behavioral Justification
+    (A core principle from human psychology explaining WHY this policy works)
+
+    ## Key Assumptions
+    (2-3 critical assumptions underpinning the strategy)
+
+    ## Relevant Mental Models
+    (Relevant strategic frameworks or Rumelt's sources of power)
+  `;
+
   try {
-    return JSON.parse(jsonStr) as T;
-  } catch (e) {
-    console.error("Failed to parse JSON response:", e, "Original string:", markdownJson);
-    throw new Error(`Invalid JSON response: ${ (e as Error).message }. Original text: ${markdownJson.substring(0, 500)}`);
-  }
-};
-
-export const generateChallengeFormulation = async (
-  diagnosis: DiagnosisData,
-  lang: Language
-): Promise<{ formulation: FormulatedChallenge; groundingChunks?: GroundingChunk[] }> => {
-  try {
-    const ai = getAiClient();
-    const model = ai.models;
-    const languageInstruction = getLanguageInstruction(lang, 'json_object');
-    const systemPromptStrategist = `${BASE_SYSTEM_PROMPT_STRATEGIST}\n\n${languageInstruction}`;
-
-    let promptContent = '';
-
-    if (diagnosis.briefingFileContent) {
-        promptContent += `First and foremost, analyze the following text content extracted from the user's uploaded briefing document (${diagnosis.briefingFileName}). This document provides the most critical and primary context for the task. Your entire analysis must be heavily based on this information.\n\n--- BRIEFING DOCUMENT START ---\n${diagnosis.briefingFileContent}\n--- BRIEFING DOCUMENT END ---\n\n`;
-        promptContent += `Now, using the primary context from the briefing document above AND the supplementary structured data below, please formulate the strategic challenge.\n\n`;
-        promptContent += `Supplementary Structured Data:\n\`\`\`json\n${JSON.stringify(diagnosis, (key, value) => key === 'briefingFileContent' ? undefined : value, 2)}\n\`\`\`\n\n`;
-    } else {
-        promptContent += `Here is the diagnosis data provided by the user in JSON format:\n\`\`\`json\n${JSON.stringify(diagnosis, null, 2)}\n\`\`\`\n\n`;
-    }
-
-    promptContent += `Please formulate the strategic challenge kernel (Diagnosis and Guiding Policy) based on ALL the provided information, following Rumelt's principles.`;
-
-    // FIX: Simplified the 'contents' parameter to a string for a single-turn prompt, as per API guidelines.
-    const response: GenerateContentResponse = await model.generateContent({
+    // STRATEGY:
+    // We enable `googleSearch` tool.
+    // We DO NOT set `responseMimeType: application/json` or `responseSchema`.
+    // This prevents the API error "GoogleSearch tool is not supported with responseSchema".
+    // We rely on the `extractSection` regex to parse the structured markdown response.
+    
+    const response = await ai.models.generateContent({
       model: GEMINI_MODEL_TEXT,
-      contents: promptContent,
+      contents: userPrompt,
       config: {
-        systemInstruction: systemPromptStrategist,
-        responseMimeType: "application/json",
-      },
+        systemInstruction: BASE_SYSTEM_PROMPT_STRATEGIST,
+        tools: [{ googleSearch: {} }], 
+      }
     });
 
-    const formulation = parseJsonFromMarkdown<FormulatedChallenge>(response.text);
-    if (!formulation) {
-        throw new Error(getText(lang, UIStringKeys.ErrorGeneric) + " (Could not parse challenge formulation from Gemini response.)");
-    }
+    const responseText = response.text || "";
     
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks as GroundingChunk[] | undefined;
+    // Manual Parsing of the Markdown response
+    const formulation: FormulatedChallenge = {
+      culturalTension: extractSection(responseText, "Cultural Tension"),
+      marketOpportunity: extractSection(responseText, "Market Opportunity"),
+      consumerInsight: extractSection(responseText, "Consumer Insight"),
+      rumeltDiagnosis: extractSection(responseText, "Rumelt Diagnosis"),
+      rumeltGuidingPolicy: extractSection(responseText, "Rumelt Guiding Policy"),
+      behavioralJustification: extractSection(responseText, "Behavioral Justification"),
+      keyAssumptions: extractSection(responseText, "Key Assumptions"),
+      relevantMentalModels: extractSection(responseText, "Relevant Mental Models"),
+    };
+
+    // Extract Grounding Metadata (Citations)
+    const groundingChunks: GroundingChunk[] = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+
+    // Fallback: If parsing completely failed (e.g. model ignored headers), 
+    // put the raw text in the diagnosis field so the user at least sees the output.
+    if (!formulation.rumeltDiagnosis && !formulation.rumeltGuidingPolicy && responseText.length > 0) {
+        console.warn("Markdown parsing failed to find headers. Returning raw text into diagnosis field.");
+        formulation.rumeltDiagnosis = responseText; 
+    }
 
     return { formulation, groundingChunks };
 
   } catch (error) {
-    console.error("Error generating challenge formulation:", error);
-    if (error instanceof Error && error.message.startsWith("Invalid JSON response")) {
-        throw error;
-    }
-    if (error instanceof Error && error.message.includes("API Key")) {
-        throw error;
-    }
-    throw new Error(getText(lang, UIStringKeys.ErrorGeneric) + (error instanceof Error ? `: ${error.message}` : ''));
+    console.error("[generateChallengeFormulation] API Error:", error);
+    throw error;
   }
 };
 
 export const generateSmartPrompts = async (
-  challenge: FormulatedChallenge,
+  challenge: FormulatedChallenge, 
+  diagnosis: DiagnosisData,
   lang: Language
-): Promise<{ prompts: string[]; groundingChunks?: GroundingChunk[] }> => {
+): Promise<{ prompts: string[], groundingChunks?: GroundingChunk[] }> => {
+  const ai = getAiClient();
+
+  const userPrompt = `
+    Context:
+    - Language: ${lang}
+    - Project Budget: ${diagnosis.projectBudget || "Not defined"}
+    - Rumelt's Diagnosis: ${challenge.rumeltDiagnosis}
+    - Rumelt's Guiding Policy: ${challenge.rumeltGuidingPolicy}
+    - Behavioral Justification: ${challenge.behavioralJustification}
+
+    Generate 5-7 smart, actionable ideation prompts for Coherent Actions (Media, Creative, Touchpoints).
+  `;
+
   try {
-    const ai = getAiClient();
-    const model = ai.models;
-    const languageInstruction = getLanguageInstruction(lang, 'json_array_of_strings');
-    const systemPromptPromptGenerator = `${BASE_SYSTEM_PROMPT_PROMPT_GENERATOR}\n\n${languageInstruction}`;
-    
-    // FIX: Simplified the 'contents' parameter to a string for a single-turn prompt, as per API guidelines.
-    const response: GenerateContentResponse = await model.generateContent({
+    // For this function, we do NOT use googleSearch, so we CAN use responseSchema safely.
+    // This ensures we get a perfect JSON array every time.
+    const response = await ai.models.generateContent({
       model: GEMINI_MODEL_TEXT,
-      contents: `Here is the formulated strategic challenge kernel (Rumelt's Diagnosis and Guiding Policy): ${JSON.stringify(challenge, null, 2)} Please generate smart prompts for Coherent Actions based on this.`,
+      contents: userPrompt,
       config: {
-        systemInstruction: systemPromptPromptGenerator,
+        systemInstruction: BASE_SYSTEM_PROMPT_PROMPT_GENERATOR,
         responseMimeType: "application/json",
-      },
+        responseSchema: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+        }
+      }
     });
 
-    const prompts = parseJsonFromMarkdown<string[]>(response.text);
-    if (!prompts || !Array.isArray(prompts)) {
-        throw new Error(getText(lang, UIStringKeys.ErrorGeneric) + " (Could not parse prompts from Gemini response or it's not an array.)");
-    }
+    const responseText = response.text;
+    if (!responseText) throw new Error("The AI returned an empty response.");
 
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks as GroundingChunk[] | undefined;
+    let prompts: string[] = [];
+    try {
+        // Clean and parse
+        const jsonStr = cleanJsonArrayString(responseText);
+        prompts = JSON.parse(jsonStr) as string[];
+    } catch (e) {
+        console.error("Failed to parse JSON response", responseText);
+        // Fallback: if it's just text, wrap it
+        prompts = [responseText];
+    }
     
-    return { prompts, groundingChunks };
+    return { prompts, groundingChunks: undefined };
 
   } catch (error) {
-    console.error("Error generating smart prompts:", error);
-     if (error instanceof Error && error.message.startsWith("Invalid JSON response")) {
-        throw error;
-    }
-    if (error instanceof Error && error.message.includes("API Key")) {
-        throw error;
-    }
-    throw new Error(getText(lang, UIStringKeys.ErrorGeneric) + (error instanceof Error ? `: ${error.message}` : ''));
+    console.error("[generateSmartPrompts] API Error:", error);
+    throw error;
   }
 };
 
 export const suggestContextualItem = async (
-  fieldType: string,
+  fieldLabel: string,
   currentValue: string,
   context: Partial<DiagnosisData>,
   lang: Language
 ): Promise<string[]> => {
+  const ai = getAiClient();
+
+  const userPrompt = `
+    Context:
+    - Language: ${lang}
+    - Client: ${context.clientName || "Unknown"}
+    - Sector: ${context.sector || "Unknown"}
+    
+    Field: "${fieldLabel}"
+    Current input: "${currentValue}"
+    
+    Provide 3 suggestions.
+  `;
+
   try {
-    const ai = getAiClient();
-    const model = ai.models;
-    const languageInstruction = getLanguageInstruction(lang, 'json_array_of_strings');
-    
-    let prompt = '';
-
-    if (context.briefingFileContent) {
-        prompt += `For primary context, first analyze the following text from the uploaded briefing document:\n--- BRIEFING START ---\n${context.briefingFileContent.substring(0, 4000)}...\n--- BRIEFING END ---\n\n`;
-        prompt += `Now consider the supplementary structured context:\n\`\`\`json\n${JSON.stringify(context, (key, value) => key === 'briefingFileContent' ? undefined : value, 2)}\n\`\`\`\n\n`;
-    } else {
-        prompt += `Given the current context:\n\`\`\`json\n${JSON.stringify(context, null, 2)}\n\`\`\`\n\n`;
-    }
-    
-    prompt += `The user is trying to define "${fieldType}" and has typed "${currentValue}", suggest 3-5 improved or alternative phrases. Base your suggestions primarily on the briefing document if available. Focus on clarity and strategic relevance according to Rumelt's principles (e.g., for a diagnosis, ensure it's a specific challenge, not a goal). Output as a JSON array of strings.\n\n${languageInstruction}`;
-
-    const response: GenerateContentResponse = await model.generateContent({
+    // No search needed for simple suggestions, so we use strict JSON schema.
+    const response = await ai.models.generateContent({
       model: GEMINI_MODEL_TEXT,
-      contents: prompt,
+      contents: userPrompt,
       config: {
+        systemInstruction: BASE_SYSTEM_PROMPT_HELPER,
         responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 0 } 
+        responseSchema: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+        }
       }
     });
-    const suggestions = parseJsonFromMarkdown<string[]>(response.text);
-    return suggestions || [];
+
+    const responseText = response.text;
+    if (!responseText) return [];
+
+    try {
+      const jsonStr = cleanJsonArrayString(responseText);
+      return JSON.parse(jsonStr) as string[];
+    } catch (e) {
+      console.error("Failed to parse suggestions JSON", e);
+      return [];
+    }
   } catch (error) {
-    console.error(`Error suggesting ${fieldType}:`, error);
-    return []; 
+    console.error("Error getting suggestions:", error);
+    return [];
   }
 };

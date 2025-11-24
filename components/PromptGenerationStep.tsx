@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect } from 'react';
-import { FormulatedChallenge, GroundingChunk, Language, UIStringKeys } from '../types';
+import { FormulatedChallenge, GroundingChunk, Language, UIStringKeys, DiagnosisData } from '../types';
 import { generateSmartPrompts } from '../services/geminiService';
 import { getText } from '../constants';
 import Button from './common/Button';
@@ -10,6 +10,7 @@ import { SparklesIcon } from './Icons';
 
 interface PromptGenerationStepProps {
   challengeData: FormulatedChallenge;
+  diagnosisData: DiagnosisData;
   generatedPrompts: string[];
   onUpdatePrompts: (prompts: string[]) => void;
   setLoading: (loading: boolean) => void;
@@ -21,6 +22,7 @@ interface PromptGenerationStepProps {
 
 const PromptGenerationStep: React.FC<PromptGenerationStepProps> = ({
   challengeData,
+  diagnosisData,
   generatedPrompts,
   onUpdatePrompts,
   setLoading,
@@ -42,7 +44,8 @@ const PromptGenerationStep: React.FC<PromptGenerationStepProps> = ({
     setLoading(true);
     setGroundingChunks(undefined);
     try {
-      const { prompts, groundingChunks: chunks } = await generateSmartPrompts(challengeData, lang);
+      // Pass diagnosisData to include budget context
+      const { prompts, groundingChunks: chunks } = await generateSmartPrompts(challengeData, diagnosisData, lang);
       onUpdatePrompts(prompts);
       if (chunks) setGroundingChunks(chunks);
     } catch (err) {
@@ -51,7 +54,7 @@ const PromptGenerationStep: React.FC<PromptGenerationStepProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [challengeData, onUpdatePrompts, setLoading, setError, lang, isChallengeKernelReady]);
+  }, [challengeData, diagnosisData, onUpdatePrompts, setLoading, setError, lang, isChallengeKernelReady]);
 
 
   return (
