@@ -1,12 +1,13 @@
 
 import React, { ChangeEvent, useRef, useState } from 'react';
-import { DiagnosisData, FunnelStage, InvolvementLevel, Language, UIStringKeys, ScreenshotData } from '../types';
+import { DiagnosisData, FunnelStage, InvolvementLevel, Language, UIStringKeys, ScreenshotData, OpportunityType, MediaRole, DigitalMaturity } from '../types';
 import { defaultFunnelStages, defaultInvolvementLevels, getText } from '../constants';
+import { analyzeBriefingInputs } from '../services/geminiService';
 import Input from './common/Input';
 import Textarea from './common/Textarea';
 import Select from './common/Select';
 import Card from './common/Card';
-import { AcademicCapIcon, DocumentTextIcon, XMarkIcon } from './Icons';
+import { AcademicCapIcon, DocumentTextIcon, XMarkIcon, CpuChipIcon } from './Icons';
 import Button from './common/Button'; 
 import AIHelperTextarea from './common/AIHelperTextarea';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -24,6 +25,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isParsingPdf, setIsParsingPdf] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false); // State for the new analysis button
   const [activeTab, setActiveTab] = useState<'pdf' | 'images' | 'manual'>('pdf');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -52,7 +54,9 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
     const file = event.target.files?.[0];
     onUpdate({ briefingFileName: null, briefingFileContent: null });
 
-    if (file && file.type === "application/pdf") {
+    if (!file) return;
+
+    if (file.type === "application/pdf") {
       setIsParsingPdf(true);
       onUpdate({ briefingFileName: file.name });
       try {
@@ -75,9 +79,15 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
       } finally {
         setIsParsingPdf(false);
       }
-    } else if (file) {
-      alert(getText(lang, UIStringKeys.AlertNonPDF));
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    } else if (file.type === "text/plain") {
+        onUpdate({ briefingFileName: file.name });
+        const reader = new FileReader();
+        reader.onload = (e) => onUpdate({ briefingFileContent: e.target?.result as string });
+        reader.readAsText(file);
+    } else {
+         // UI Feedback for unsupported parsing in this env, but allow file name to persist
+         alert(getText(lang, UIStringKeys.AlertNonPDF));
+         onUpdate({ briefingFileName: file.name + " (Content not auto-extracted)" });
     }
   };
 
@@ -87,14 +97,12 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
 
       const newScreenshots: ScreenshotData[] = [...(data.screenshots || [])];
       
-      // Limit to 5 images total
       const slotsAvailable = 5 - newScreenshots.length;
       if (slotsAvailable <= 0) {
           alert("Max 5 images allowed");
           return;
       }
 
-      // Explicitly cast to File[] to fix TypeScript 'unknown' type inference errors
       const filesToProcess = Array.from(files).slice(0, slotsAvailable) as File[];
 
       for (const file of filesToProcess) {
@@ -107,14 +115,13 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                       reader.readAsDataURL(file);
                   });
                   
-                  // Split base64 to get raw data for API
                   const rawBase64 = base64Data.split(',')[1];
                   
                   newScreenshots.push({
                       name: file.name,
                       mimeType: file.type,
                       data: rawBase64,
-                      previewUrl: base64Data // Includes prefix for <img src>
+                      previewUrl: base64Data 
                   });
               } catch (e) {
                   console.error("Error reading image", file.name, e);
@@ -136,8 +143,30 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
       onUpdate({ screenshots: updated });
   };
 
+  // NEW: Analysis Function
+  const handleAnalyzeBriefing = async () => {
+      if (!data.clientName) {
+          alert(getText(lang, UIStringKeys.ErrorDiagnosisNotComplete));
+          return;
+      }
+      setIsAnalyzing(true);
+      try {
+          // Analyze using just the context + client name if no file/text provided
+          const extractedData = await analyzeBriefingInputs(data, lang);
+          onUpdate(extractedData);
+      } catch (e) {
+          alert(getText(lang, UIStringKeys.ErrorGeneric));
+      } finally {
+          setIsAnalyzing(false);
+      }
+  };
+
   const funnelStageOptions = defaultFunnelStages.map(stage => ({ value: stage, label: stage }));
   const involvementLevelOptions = defaultInvolvementLevels.map(level => ({ value: level, label: level }));
+  
+  const opportunityOptions = Object.values(OpportunityType).map(v => ({ value: v, label: v }));
+  const mediaRoleOptions = Object.values(MediaRole).map(v => ({ value: v, label: v }));
+  const maturityOptions = Object.values(DigitalMaturity).map(v => ({ value: v, label: v }));
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -160,14 +189,13 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
           onChange={handleChange} 
           placeholder="e.g., Acme Corp, LLYC Foundation" 
         />
-        <Input
-          label={getText(lang, UIStringKeys.LabelProjectBudget)}
-          id="projectBudget"
-          name="projectBudget"
-          value={data.projectBudget}
-          onChange={handleChange}
-          placeholder="e.g., 50,000 - 75,000 USD, or 'Not defined'"
-        />
+        
+        {/* NEW DROPDOWNS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Select label={getText(lang, UIStringKeys.LabelOpportunityType)} id="opportunityType" name="opportunityType" value={data.opportunityType} onChange={handleChange} options={opportunityOptions} lang={lang} />
+            <Select label={getText(lang, UIStringKeys.LabelMediaRole)} id="mediaRole" name="mediaRole" value={data.mediaRole} onChange={handleChange} options={mediaRoleOptions} lang={lang} />
+            <Select label={getText(lang, UIStringKeys.LabelDigitalMaturity)} id="digitalMaturity" name="digitalMaturity" value={data.digitalMaturity} onChange={handleChange} options={maturityOptions} lang={lang} />
+        </div>
 
         {/* --- BRIEFING SOURCE TABS --- */}
         <div className="mt-6">
@@ -195,7 +223,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                 </button>
             </div>
 
-            {/* TAB CONTENT: PDF */}
+            {/* TAB CONTENT: PDF/FILES */}
             {activeTab === 'pdf' && (
                 <div className="animate-fadeIn">
                     <div className="flex items-center space-x-2">
@@ -210,7 +238,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                         type="file"
                         id="briefingFile"
                         name="briefingFile"
-                        accept=".pdf"
+                        accept=".pdf, .docx, .pptx, .txt"
                         onChange={handlePdfChange}
                         ref={fileInputRef}
                         className="hidden"
@@ -239,6 +267,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                         <span className="text-sm text-[#ACB4B6] font-['Open_Sans']">{getText(lang, UIStringKeys.PlaceholderNoFileSelected)}</span>
                         )}
                     </div>
+                    <p className="text-xs text-[#878E90] mt-2 italic">Accepted: PDF, DOCX, PPTX, TXT.</p>
                 </div>
             )}
 
@@ -303,6 +332,20 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
         </div>
         {/* --- END TABS --- */}
 
+        {/* ANALYSIS BUTTON - Updated (No icon, new text key) */}
+        <div className="mt-6 border-t border-[#DDDDDD] pt-4 flex justify-center">
+            <Button 
+                onClick={handleAnalyzeBriefing} 
+                disabled={isAnalyzing || !data.clientName} 
+                isLoading={isAnalyzing}
+                variant="primary"
+                className="w-full md:w-auto"
+                // icon removed
+            >
+                {isAnalyzing ? getText(lang, UIStringKeys.ButtonAnalyzing) : getText(lang, UIStringKeys.ButtonAnalyzeBriefing)}
+            </Button>
+        </div>
+
       </Card>
 
 
@@ -340,11 +383,10 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
           <Select label={getText(lang, UIStringKeys.LabelConsumerInvolvement)} id="involvement" name="involvement" value={data.consumerContext.involvement} onChange={handleChange} options={involvementLevelOptions} lang={lang} />
           <Select label={getText(lang, UIStringKeys.LabelFunnelStage)} id="funnelStage" name="funnelStage" value={data.consumerContext.funnelStage} onChange={handleChange} options={funnelStageOptions} lang={lang} />
           <Textarea label={getText(lang, UIStringKeys.LabelConsumerBarriers)} id="barriers" name="barriers" value={data.consumerContext.barriers} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderConsumerBarriers)} />
+          {/* Moved Current Strategy here as an optional/extracted field */}
+           <Textarea label={getText(lang, UIStringKeys.LabelCurrentStrategy)} id="currentStrategyAttempt" name="currentStrategyAttempt" value={data.currentStrategyAttempt} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderCurrentStrategy)} rows={2} />
         </Card>
       </div>
-      <Card title={getText(lang, UIStringKeys.HeaderCurrentEffortsOptional)}>
-         <Textarea label={getText(lang, UIStringKeys.LabelCurrentStrategy)} id="currentStrategyAttempt" name="currentStrategyAttempt" value={data.currentStrategyAttempt} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderCurrentStrategy)} />
-      </Card>
     </div>
   );
 };

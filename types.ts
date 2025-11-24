@@ -14,22 +14,49 @@ export enum InvolvementLevel {
   LOW = "Low Involvement",
 }
 
+export enum OpportunityType {
+  NEWBIZ = "New Business",
+  UPSELL = "Upsell",
+  CROSS_SELL = "Cross-sell",
+}
+
+export enum MediaRole {
+  BRAND = "Brand",
+  PERFORMANCE = "Performance",
+  RETAIL = "Retail Media",
+  MIXED = "Mixed / Full Funnel",
+}
+
+export enum DigitalMaturity {
+  LOW = "Low (Legacy / Siloed)",
+  MID = "Mid (Developing / Hybrid)",
+  HIGH = "High (Data-Driven / Integrated)",
+}
+
 export interface ScreenshotData {
   name: string;
-  data: string; // Base64 string without prefix for API, or with prefix for preview depending on usage. We will store raw base64 data.
+  data: string; // Base64 string without prefix for API
   mimeType: string;
   previewUrl: string; // For UI display
 }
 
 export interface DiagnosisData {
   clientName: string; 
-  projectBudget: string; 
+  // Removed projectBudget
+  
   briefingFileName: string | null; 
   briefingFileContent: string | null;
+  
   // New Fields
   manualBriefingText: string;
   screenshots: ScreenshotData[];
-  // End New Fields
+  
+  // New Contextual Fields (Guided)
+  opportunityType: OpportunityType | "";
+  mediaRole: MediaRole | "";
+  digitalMaturity: DigitalMaturity | "";
+
+  // Auto-extracted fields
   customerType: string;
   market: string;
   sector: string;
@@ -45,14 +72,20 @@ export interface DiagnosisData {
 }
 
 export interface FormulatedChallenge {
+  // Split into 3 distinct fields
+  strategicAlternativeA: string; 
+  strategicAlternativeB: string; 
+  strategicAlternativeC: string; 
+  selectedAlternative: 'A' | 'B' | 'C' | ''; // Track user selection
+
   culturalTension: string;
   marketOpportunity: string;
   consumerInsight: string;
   rumeltDiagnosis: string; 
   rumeltGuidingPolicy: string; 
   behavioralJustification: string;
-  keyAssumptions?: string; 
-  relevantMentalModels?: string; 
+  keyAssumptions: string; 
+  relevantMentalModels: string; 
 }
 
 export interface StrategySessionData {
@@ -63,7 +96,6 @@ export interface StrategySessionData {
   generatedPrompts: string[];
 }
 
-// Minimal interface for the history list
 export interface HistoryItem {
   id: string;
   clientName: string;
@@ -72,7 +104,7 @@ export interface HistoryItem {
 
 export enum AppStep {
   DIAGNOSIS = "1. Diagnosis",
-  CHALLENGE_FORMULATION = "2. Challenge Formulation",
+  CHALLENGE_FORMULATION = "2. Challenge Definition", // Renamed
   PROMPT_GENERATION = "3. Smart Prompts",
   RESULTS = "4. Summary & Export",
 }
@@ -150,6 +182,8 @@ export enum UIStringKeys {
   ButtonRegenerateChallenge = "ButtonRegenerateChallenge",
   ButtonGenerateSmartPrompts = "ButtonGenerateSmartPrompts",
   ButtonRegeneratePrompts = "ButtonRegeneratePrompts",
+  ButtonAnalyzeBriefing = "ButtonAnalyzeBriefing", // New
+  ButtonAnalyzing = "ButtonAnalyzing", // New
   CopyToClipboard = "CopyToClipboard",
   DownloadAsMD = "DownloadAsMD",
   ResultsCopied = "ResultsCopied",
@@ -179,6 +213,7 @@ export enum UIStringKeys {
   HeaderInformationSources = "HeaderInformationSources", 
   HeaderDiagnosisSnapshot = "HeaderDiagnosisSnapshot", 
   HeaderStrategicChallengeCore = "HeaderStrategicChallengeCore", 
+  HeaderStrategicAlternatives = "HeaderStrategicAlternatives", // New
   
   // Descriptions for Steps
   DescriptionDiagnosis = "DescriptionDiagnosis", 
@@ -200,7 +235,11 @@ export enum UIStringKeys {
   PlaceholderNoFileSelected = "PlaceholderNoFileSelected", 
   FileSelected = "FileSelected", 
   FileParsing = "FileParsing",
-  LabelProjectBudget = "LabelProjectBudget", 
+  
+  LabelOpportunityType = "LabelOpportunityType", 
+  LabelMediaRole = "LabelMediaRole", 
+  LabelDigitalMaturity = "LabelDigitalMaturity", 
+
   LabelCustomerType = "LabelCustomerType", 
   PlaceholderCustomerType = "PlaceholderCustomerType", 
   LabelMarketCategory = "LabelMarketCategory", 
@@ -230,6 +269,10 @@ export enum UIStringKeys {
   TextNotGenerated = "TextNotGenerated", 
   TextNoPromptsGenerated = "TextNoPromptsGenerated", 
   SelectDefaultOption = "SelectDefaultOption", 
+  
+  LabelOptionA = "LabelOptionA",
+  LabelOptionB = "LabelOptionB",
+  LabelOptionC = "LabelOptionC",
 
   // Language Toggle
   LanguageToggleEN = "LanguageToggleEN",

@@ -17,10 +17,16 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
 
     output += `## 1. ${getText(lang, UIStringKeys.HeaderDiagnosis)}\n\n`;
     output += `**${getText(lang, UIStringKeys.LabelClientName)}:** ${data.diagnosis.clientName || getText(lang, UIStringKeys.TextNotSet)}\n`;
-    output += `**${getText(lang, UIStringKeys.LabelProjectBudget)}:** ${data.diagnosis.projectBudget || getText(lang, UIStringKeys.TextNotSet)}\n`;
+    
+    // Updated Context Fields
+    output += `**${getText(lang, UIStringKeys.LabelOpportunityType)}:** ${data.diagnosis.opportunityType || getText(lang, UIStringKeys.TextNotSet)}\n`;
+    output += `**${getText(lang, UIStringKeys.LabelMediaRole)}:** ${data.diagnosis.mediaRole || getText(lang, UIStringKeys.TextNotSet)}\n`;
+    output += `**${getText(lang, UIStringKeys.LabelDigitalMaturity)}:** ${data.diagnosis.digitalMaturity || getText(lang, UIStringKeys.TextNotSet)}\n`;
+
     if (data.diagnosis.briefingFileName) {
       output += `**${getText(lang, UIStringKeys.LabelUploadBriefing)}:** ${data.diagnosis.briefingFileName}\n`;
     }
+    
     output += `**${getText(lang, UIStringKeys.LabelCustomerType)}:** ${data.diagnosis.customerType || getText(lang, UIStringKeys.TextNotSet)}\n`;
     output += `**${getText(lang, UIStringKeys.LabelMarketCategory)}:** ${data.diagnosis.market || getText(lang, UIStringKeys.TextNotSet)}\n`;
     output += `**${getText(lang, UIStringKeys.LabelSectorIndustry)}:** ${data.diagnosis.sector || getText(lang, UIStringKeys.TextNotSet)}\n`;
@@ -33,6 +39,23 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
     output += `**${getText(lang, UIStringKeys.LabelCurrentStrategy)}:** ${data.diagnosis.currentStrategyAttempt || getText(lang, UIStringKeys.TextNotSet)}\n\n`;
 
     output += `## 2. ${getText(lang, UIStringKeys.HeaderChallengeFormulation)}\n\n`;
+    
+    // Display Alternatives
+    const getSelectionLabel = (key: string) => {
+        if (data.challenge.selectedAlternative === key) return " [SELECTED]";
+        return "";
+    }
+
+    if (data.challenge.strategicAlternativeA) {
+        output += `### ${getText(lang, UIStringKeys.LabelOptionA)}${getSelectionLabel('A')}:\n${data.challenge.strategicAlternativeA}\n\n`;
+    }
+    if (data.challenge.strategicAlternativeB) {
+        output += `### ${getText(lang, UIStringKeys.LabelOptionB)}${getSelectionLabel('B')}:\n${data.challenge.strategicAlternativeB}\n\n`;
+    }
+    if (data.challenge.strategicAlternativeC) {
+        output += `### ${getText(lang, UIStringKeys.LabelOptionC)}${getSelectionLabel('C')}:\n${data.challenge.strategicAlternativeC}\n\n`;
+    }
+
     output += `### ${getText(lang, UIStringKeys.HeaderRumeltDiagnosis)}:\n${data.challenge.rumeltDiagnosis || getText(lang, UIStringKeys.TextNotGenerated)}\n\n`;
     output += `### ${getText(lang, UIStringKeys.HeaderRumeltGuidingPolicy)}:\n${data.challenge.rumeltGuidingPolicy || getText(lang, UIStringKeys.TextNotGenerated)}\n\n`;
     output += `### ${getText(lang, UIStringKeys.HeaderBehavioralJustification)}:\n${data.challenge.behavioralJustification || getText(lang, UIStringKeys.TextNotGenerated)}\n\n`;
@@ -71,7 +94,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
     const element = document.createElement("a");
     const file = new Blob([textToDownload], {type: 'text/markdown;charset=utf-8'}); 
     element.href = URL.createObjectURL(file);
-    element.download = "Strategic_Challenge_Summary_Rumelt.md"; // Updated filename
+    element.download = "Strategic_Challenge_Summary_Rumelt.md"; 
     document.body.appendChild(element); 
     element.click();
     document.body.removeChild(element);
@@ -87,58 +110,30 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
         {getText(lang, UIStringKeys.DescriptionResults)}
       </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title={getText(lang, UIStringKeys.HeaderDiagnosisSnapshot)} className="max-h-[300px] overflow-y-auto"> 
-          <ul className="space-y-1 text-sm text-[#0A263B] font-['Open_Sans']"> 
-            <li><strong>{getText(lang, UIStringKeys.LabelClientName)}:</strong> {data.diagnosis.clientName || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelProjectBudget)}:</strong> {data.diagnosis.projectBudget || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelCustomerType)}:</strong> {data.diagnosis.customerType || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelMarketCategory)}:</strong> {data.diagnosis.market || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelSectorIndustry)}:</strong> {data.diagnosis.sector || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelProductService)}:</strong> {data.diagnosis.productOrService || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelBusinessChallenge)}:</strong> {data.diagnosis.businessChallenge || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelCustomerChallenge)}:</strong> {data.diagnosis.customerChallenge || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelConsumerInvolvement)}:</strong> {data.diagnosis.consumerContext.involvement || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelFunnelStage)}:</strong> {data.diagnosis.consumerContext.funnelStage || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-            <li><strong>{getText(lang, UIStringKeys.LabelConsumerBarriers)}:</strong> {data.diagnosis.consumerContext.barriers || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotSet)}</span>}</li>
-          </ul>
-        </Card>
-
-        <Card title={getText(lang, UIStringKeys.HeaderStrategicChallengeCore)} className="max-h-[300px] overflow-y-auto"> 
-          <div className="text-sm text-[#0A263B] font-['Open_Sans'] space-y-2"> 
-            <p><strong className="text-[#F54963] font-['Montserrat']">{getText(lang, UIStringKeys.HeaderRumeltDiagnosis)}:</strong> {data.challenge.rumeltDiagnosis || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotGenerated)}</span>}</p>
-            <p><strong className="text-[#36A7B7] font-['Montserrat']">{getText(lang, UIStringKeys.HeaderRumeltGuidingPolicy)}:</strong> {data.challenge.rumeltGuidingPolicy || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotGenerated)}</span>}</p>
-            <p><strong className="text-[#FC6B08] font-['Montserrat'] flex items-center"><BrainIcon className="w-4 h-4 mr-1.5"/>{getText(lang, UIStringKeys.HeaderBehavioralJustification)}:</strong> {data.challenge.behavioralJustification || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotGenerated)}</span>}</p>
-            <p><strong className="text-[#8B8BB2] font-['Montserrat']">{getText(lang, UIStringKeys.HeaderCulturalTension)}:</strong> {data.challenge.culturalTension || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotGenerated)}</span>}</p>
-            <p><strong className="text-[#76CC9B] font-['Montserrat']">{getText(lang, UIStringKeys.HeaderMarketOpportunity)}:</strong> {data.challenge.marketOpportunity || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotGenerated)}</span>}</p>
-            <p><strong className="text-[#FC6B08] font-['Montserrat']">{getText(lang, UIStringKeys.HeaderConsumerInsight)}:</strong> {data.challenge.consumerInsight || <span className="text-[#878E90]">{getText(lang, UIStringKeys.TextNotGenerated)}</span>}</p>
-          </div>
-        </Card>
-      </div>
-
-      <Card title={getText(lang, UIStringKeys.HeaderGeneratedIdeationPrompts)} className="max-h-[300px] overflow-y-auto"> 
-        {data.generatedPrompts.length > 0 ? (
-          <ul className="space-y-2">
-            {data.generatedPrompts.map((prompt, index) => (
-              <li key={index} className="p-3 bg-[#F8F8F8] border border-[#DDDDDD] rounded-md text-sm text-[#0A263B] font-['Open_Sans']"> 
-                {prompt}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-[#878E90] font-['Open_Sans']">{getText(lang, UIStringKeys.TextNoPromptsGenerated)}</p> 
-        )}
-      </Card>
-      
-      <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-        <Button onClick={handleCopyToClipboard} variant="secondary" icon={<DocumentTextIcon className="w-5 h-5"/>}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Button 
+          onClick={handleCopyToClipboard} 
+          icon={<DocumentTextIcon className="w-5 h-5" />}
+          variant="secondary"
+        >
           {getText(lang, UIStringKeys.CopyToClipboard)}
         </Button>
-        <Button onClick={handleDownloadTextFile} variant="primary" icon={<DocumentTextIcon className="w-5 h-5"/>}>
+        <Button 
+          onClick={handleDownloadTextFile} 
+          icon={<DocumentTextIcon className="w-5 h-5" />}
+          variant="primary"
+        >
           {getText(lang, UIStringKeys.DownloadAsMD)}
         </Button>
       </div>
 
+      <Card>
+        <div className="prose prose-sm max-w-none font-['Open_Sans'] text-[#0A263B]">
+          <pre className="whitespace-pre-wrap bg-[#F8F8F8] p-4 rounded-lg border border-[#DDDDDD] overflow-x-auto text-sm">
+            {formatForExport()}
+          </pre>
+        </div>
+      </Card>
     </div>
   );
 };
