@@ -14,11 +14,22 @@ export enum InvolvementLevel {
   LOW = "Low Involvement",
 }
 
+export interface ScreenshotData {
+  name: string;
+  data: string; // Base64 string without prefix for API, or with prefix for preview depending on usage. We will store raw base64 data.
+  mimeType: string;
+  previewUrl: string; // For UI display
+}
+
 export interface DiagnosisData {
   clientName: string; 
   projectBudget: string; 
   briefingFileName: string | null; 
   briefingFileContent: string | null;
+  // New Fields
+  manualBriefingText: string;
+  screenshots: ScreenshotData[];
+  // End New Fields
   customerType: string;
   market: string;
   sector: string;
@@ -37,17 +48,26 @@ export interface FormulatedChallenge {
   culturalTension: string;
   marketOpportunity: string;
   consumerInsight: string;
-  rumeltDiagnosis: string; // Changed from decisionTension
-  rumeltGuidingPolicy: string; // New field
+  rumeltDiagnosis: string; 
+  rumeltGuidingPolicy: string; 
   behavioralJustification: string;
   keyAssumptions?: string; 
   relevantMentalModels?: string; 
 }
 
 export interface StrategySessionData {
+  id: string; // Unique ID for history
+  lastModified: number; // Timestamp
   diagnosis: DiagnosisData;
   challenge: FormulatedChallenge;
   generatedPrompts: string[];
+}
+
+// Minimal interface for the history list
+export interface HistoryItem {
+  id: string;
+  clientName: string;
+  lastModified: number;
 }
 
 export enum AppStep {
@@ -78,6 +98,17 @@ export enum UIStringKeys {
   AppName = "AppName",
   AppSubtitle = "AppSubtitle", 
 
+  // History / Session Management
+  ButtonHistory = "ButtonHistory",
+  ButtonNewSession = "ButtonNewSession",
+  HistoryModalTitle = "HistoryModalTitle",
+  HistoryEmpty = "HistoryEmpty",
+  LabelLastModified = "LabelLastModified",
+  ButtonLoad = "ButtonLoad",
+  ButtonDelete = "ButtonDelete",
+  ConfirmDelete = "ConfirmDelete",
+  NewSessionConfirm = "NewSessionConfirm",
+
   // Footer
   FooterStep = "FooterStep", 
 
@@ -91,7 +122,7 @@ export enum UIStringKeys {
   HelpModalCloseButtonSR = "HelpModalCloseButtonSR",
   HelpModalTopicsHeader = "HelpModalTopicsHeader",
 
-  // Help Topics (existing keys are fine)
+  // Help Topics
   HelpTopic_Overview_Q = "HelpTopic_Overview_Q",
   HelpTopic_Overview_A = "HelpTopic_Overview_A",
   HelpTopic_Diagnosis_Q = "HelpTopic_Diagnosis_Q",
@@ -125,6 +156,7 @@ export enum UIStringKeys {
   FailedToCopyResults = "FailedToCopyResults",
   ButtonChooseFile = "ButtonChooseFile", 
   ButtonRemoveFile = "ButtonRemoveFile", 
+  ButtonUploadImages = "ButtonUploadImages",
 
   // Headers for Steps & Cards
   HeaderDiagnosis = "HeaderDiagnosis",
@@ -138,9 +170,9 @@ export enum UIStringKeys {
   HeaderCulturalTension = "HeaderCulturalTension", 
   HeaderMarketOpportunity = "HeaderMarketOpportunity", 
   HeaderConsumerInsight = "HeaderConsumerInsight", 
-  HeaderRumeltDiagnosis = "HeaderRumeltDiagnosis", // Renamed from HeaderDecisionTension
-  HeaderRumeltGuidingPolicy = "HeaderRumeltGuidingPolicy", // New
-  HeaderBehavioralJustification = "HeaderBehavioralJustification", // New
+  HeaderRumeltDiagnosis = "HeaderRumeltDiagnosis", 
+  HeaderRumeltGuidingPolicy = "HeaderRumeltGuidingPolicy", 
+  HeaderBehavioralJustification = "HeaderBehavioralJustification", 
   HeaderKeyAssumptions = "HeaderKeyAssumptions", 
   HeaderRelevantMentalModels = "HeaderRelevantMentalModels", 
   HeaderGeneratedIdeationPrompts = "HeaderGeneratedIdeationPrompts", 
@@ -148,7 +180,6 @@ export enum UIStringKeys {
   HeaderDiagnosisSnapshot = "HeaderDiagnosisSnapshot", 
   HeaderStrategicChallengeCore = "HeaderStrategicChallengeCore", 
   
-
   // Descriptions for Steps
   DescriptionDiagnosis = "DescriptionDiagnosis", 
   DescriptionChallengeFormulation = "DescriptionChallengeFormulation", 
@@ -159,6 +190,13 @@ export enum UIStringKeys {
   PlaceholderLoading = "PlaceholderLoading",
   LabelClientName = "LabelClientName", 
   LabelUploadBriefing = "LabelUploadBriefing", 
+  LabelBriefingSource = "LabelBriefingSource",
+  TabPDF = "TabPDF",
+  TabImages = "TabImages",
+  TabManualText = "TabManualText",
+  LabelManualBriefing = "LabelManualBriefing",
+  PlaceholderManualBriefing = "PlaceholderManualBriefing",
+  LabelUploadImages = "LabelUploadImages",
   PlaceholderNoFileSelected = "PlaceholderNoFileSelected", 
   FileSelected = "FileSelected", 
   FileParsing = "FileParsing",

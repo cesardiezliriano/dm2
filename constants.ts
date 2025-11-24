@@ -1,14 +1,16 @@
 
 import { DiagnosisData, FormulatedChallenge, FunnelStage, InvolvementLevel, Language, UIStringKeys, HelpTopic } from './types';
 
-// FIX: Updated to the recommended model 'gemini-2.5-flash' as per the guidelines.
-export const GEMINI_MODEL_TEXT = 'gemini-2.5-flash';
+// FIX: Updated to 'gemini-3-pro-preview' for Complex Text Tasks (Strategy & Reasoning)
+export const GEMINI_MODEL_TEXT = 'gemini-3-pro-preview';
 
 export const initialDiagnosisData: DiagnosisData = {
   clientName: '',
   projectBudget: '', 
   briefingFileName: null,
   briefingFileContent: null,
+  manualBriefingText: '',
+  screenshots: [],
   customerType: '',
   market: '',
   sector: '',
@@ -54,6 +56,18 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.AppName]: "Challenge Definition",
     [UIStringKeys.AppSubtitle]: "Crafting Strategic Clarity, Together.",
     [UIStringKeys.FooterStep]: "Step {current} of {total}",
+    
+    // History
+    [UIStringKeys.ButtonHistory]: "History",
+    [UIStringKeys.ButtonNewSession]: "New Session",
+    [UIStringKeys.HistoryModalTitle]: "Saved Strategy Sessions",
+    [UIStringKeys.HistoryEmpty]: "No saved sessions found.",
+    [UIStringKeys.LabelLastModified]: "Last Modified",
+    [UIStringKeys.ButtonLoad]: "Load",
+    [UIStringKeys.ButtonDelete]: "Delete",
+    [UIStringKeys.ConfirmDelete]: "Are you sure you want to delete this session?",
+    [UIStringKeys.NewSessionConfirm]: "Start a new session? Unsaved progress will be lost.",
+
     [UIStringKeys.HelpButtonTooltip]: "Help & User Guide",
     [UIStringKeys.HelpModalTitle]: "DM 2. Challenge Definition Helper",
     [UIStringKeys.HelpModalIntro]: "Hello! I'm your assistant for DM 2. Challenge Definition. Select a topic below for guidance.",
@@ -66,7 +80,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.HelpTopic_Diagnosis_Q]: "How do I complete the Diagnosis step?",
     [UIStringKeys.HelpTopic_Diagnosis_A]: "In the Diagnosis step, provide detailed information about your:\n- Client Name & Project Briefing (PDF)\n- Project Budget\n- Target Customer Type/Persona\n- Market/Category\n- Sector/Industry\n- Product or Service\n- The Business Challenge (company's problem) & The Customer Challenge (end-user's problem)\n- Consumer Context (Involvement, Funnel Stage, Barriers)\n- Current Strategy Attempts (optional).\nThe more detailed your input, the better the AI-generated insights for Rumelt's Diagnosis and Guiding Policy will be.",
     [UIStringKeys.HelpTopic_ChallengeFormulation_Q]: "Understanding Challenge Formulation (Rumelt's Diagnosis, Guiding Policy, etc.)",
-    [UIStringKeys.HelpTopic_ChallengeFormulation_A]: "Based on your Diagnosis input, the AI generates a Strategic Challenge Kernel according to Richard Rumelt:\n- **Rumelt's Diagnosis:** A clear identification of the critical challenge the business faces.\n- **Rumelt's Guiding Policy:** The overall approach to overcome the diagnosed challenge.\n- **Behavioral Justification:** A principle from psychology or behavioral economics (e.g., Mere-Exposure Effect, Social Proof) that explains *why* the Guiding Policy is likely to succeed with human beings.\n- **Cultural Tension:** A significant cultural shift creating unmet needs, providing context.\n- **Market Opportunity:** An actionable opportunity within the market, relevant to the diagnosis.\n- **Consumer Insight:** A deep understanding of your target consumer, informing the diagnosis.\n- **Key Assumptions:** Critical assumptions underpinning the challenge.\n- **Relevant Mental Models:** Strategic frameworks, possibly Rumelt's Sources of Power.\nYou can review and refine these AI-generated components.",
+    [UIStringKeys.HelpTopic_ChallengeFormulation_A]: "Based on your Diagnosis input, the AI generates a Strategic Challenge Kernel according to Richard Rumelt:\n- **Rumelt's Diagnosis:** A clear identification of the critical challenge the business faces.\n- **Rumelt's Guiding Policy:** The overall approach to overcome the diagnosed challenge.\n- **Behavioral Justification:** A principle from psychology or behavioral economics (e.g., Mere-Exposure Effect, Social Proof) that explains *why* the Guiding Policy is likely to succeed with human beings.\n- **Cultural Tension:** A significant cultural shift creating unmet needs, providing context.\n- **Market Opportunity:** An actionable opportunity within the market, relevant to the diagnosis.\n- **Consumer Insight:** A deep understanding of your target consumer, informing the diagnosis.\n- **Key Assumptions:** Critical assumptions underpinning the challenge.\n- **Relevant Mental Models:** Strategic frameworks, possibly Rumelt's Sources of Power.\nYou can review and refine these components.",
     [UIStringKeys.HelpTopic_SmartPrompts_Q]: "How can I use the Smart Prompts?",
     [UIStringKeys.HelpTopic_SmartPrompts_A]: "The Smart Prompts are AI-generated based on your formulated Rumelt's Diagnosis and Guiding Policy. They are designed to be open-ended, action-oriented, and thought-provoking to fuel ideation sessions for 'Coherent Actions' (campaigns, products, services, messaging) that effectively implement the Guiding Policy.",
     [UIStringKeys.HelpTopic_Export_Q]: "How can I save or share my work?",
@@ -92,6 +106,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.FailedToCopyResults]: "Failed to copy results: ",
     [UIStringKeys.ButtonChooseFile]: "Choose File",
     [UIStringKeys.ButtonRemoveFile]: "Remove File",
+    [UIStringKeys.ButtonUploadImages]: "Choose Images",
 
     [UIStringKeys.HeaderDiagnosis]: "Initial Diagnosis (Input for AI)",
     [UIStringKeys.HeaderChallengeFormulation]: "Strategic Challenge Kernel (Rumelt)",
@@ -110,7 +125,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.HeaderKeyAssumptions]: "Key Assumptions",
     [UIStringKeys.HeaderRelevantMentalModels]: "Relevant Mental Models / Rumelt's Sources of Power",
     [UIStringKeys.HeaderGeneratedIdeationPrompts]: "Generated Ideation Prompts (for Coherent Actions)",
-    [UIStringKeys.HeaderInformationSources]: "Information Sources (from Google Search)",
+    [UIStringKeys.HeaderInformationSources]: "Information Sources",
     [UIStringKeys.HeaderDiagnosisSnapshot]: "Diagnosis Input Snapshot",
     [UIStringKeys.HeaderStrategicChallengeCore]: "Strategic Challenge Kernel (Rumelt)",
         
@@ -125,7 +140,14 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.FileSelected]: "Selected: {fileName}",
     [UIStringKeys.FileParsing]: "Parsing: {fileName}",
     [UIStringKeys.LabelProjectBudget]: "Project Budget (Optional)",
-    [UIStringKeys.LabelUploadBriefing]: "Upload Briefing (PDF)",
+    [UIStringKeys.LabelUploadBriefing]: "Briefing / Inputs",
+    [UIStringKeys.LabelBriefingSource]: "Briefing Source",
+    [UIStringKeys.TabPDF]: "PDF File",
+    [UIStringKeys.TabImages]: "Screenshots",
+    [UIStringKeys.TabManualText]: "Manual Input",
+    [UIStringKeys.LabelManualBriefing]: "Manual Briefing / Notes",
+    [UIStringKeys.PlaceholderManualBriefing]: "Paste text from documents, emails, or describe the situation here...",
+    [UIStringKeys.LabelUploadImages]: "Upload Screenshots (Max 5)",
     [UIStringKeys.LabelCustomerType]: "Target Customer Type / Persona",
     [UIStringKeys.PlaceholderCustomerType]: "e.g., SME Founders, Gen Z Gamers",
     [UIStringKeys.LabelMarketCategory]: "Market / Category",
@@ -166,6 +188,18 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.AppName]: "Definición del Reto", 
     [UIStringKeys.AppSubtitle]: "Creando claridad estratégica, juntos.",
     [UIStringKeys.FooterStep]: "Paso {current} de {total}",
+
+    // History
+    [UIStringKeys.ButtonHistory]: "Historial",
+    [UIStringKeys.ButtonNewSession]: "Nueva Sesión",
+    [UIStringKeys.HistoryModalTitle]: "Sesiones Guardadas",
+    [UIStringKeys.HistoryEmpty]: "No se encontraron sesiones guardadas.",
+    [UIStringKeys.LabelLastModified]: "Última Modificación",
+    [UIStringKeys.ButtonLoad]: "Cargar",
+    [UIStringKeys.ButtonDelete]: "Borrar",
+    [UIStringKeys.ConfirmDelete]: "¿Seguro que quieres borrar esta sesión?",
+    [UIStringKeys.NewSessionConfirm]: "¿Iniciar nueva sesión? Se perderá el progreso no guardado.",
+
     [UIStringKeys.HelpButtonTooltip]: "Ayuda y Guía de Usuario",
     [UIStringKeys.HelpModalTitle]: "Ayudante de DM 2. Definición del Reto",
     [UIStringKeys.HelpModalIntro]: "¡Hola! Soy tu asistente para DM 2. Definición del Reto. Selecciona un tema de la lista para obtener ayuda.",
@@ -204,6 +238,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.FailedToCopyResults]: "Error al copiar resultados: ",
     [UIStringKeys.ButtonChooseFile]: "Elegir Archivo",
     [UIStringKeys.ButtonRemoveFile]: "Eliminar Archivo",
+    [UIStringKeys.ButtonUploadImages]: "Elegir Imágenes",
     
     [UIStringKeys.HeaderDiagnosis]: "Diagnóstico Inicial (Entrada para IA)",
     [UIStringKeys.HeaderChallengeFormulation]: "Núcleo del Reto Estratégico (Rumelt)",
@@ -222,7 +257,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.HeaderKeyAssumptions]: "Suposiciones Clave",
     [UIStringKeys.HeaderRelevantMentalModels]: "Modelos Mentales Relevantes / Fuentes de Poder de Rumelt",
     [UIStringKeys.HeaderGeneratedIdeationPrompts]: "Prompts de Ideación Generados (para Acciones Coherentes)",
-    [UIStringKeys.HeaderInformationSources]: "Fuentes de Información (de Google Search)",
+    [UIStringKeys.HeaderInformationSources]: "Fuentes de Información",
     [UIStringKeys.HeaderDiagnosisSnapshot]: "Resumen del Diagnóstico (Entrada)",
     [UIStringKeys.HeaderStrategicChallengeCore]: "Núcleo del Reto Estratégico (Rumelt)",
 
@@ -237,7 +272,14 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.FileSelected]: "Seleccionado: {fileName}",
     [UIStringKeys.FileParsing]: "Analizando: {fileName}",
     [UIStringKeys.LabelProjectBudget]: "Presupuesto del Proyecto (Opcional)",
-    [UIStringKeys.LabelUploadBriefing]: "Subir Briefing (PDF)",
+    [UIStringKeys.LabelUploadBriefing]: "Briefing / Entradas",
+    [UIStringKeys.LabelBriefingSource]: "Fuente del Briefing",
+    [UIStringKeys.TabPDF]: "Archivo PDF",
+    [UIStringKeys.TabImages]: "Pantallazos",
+    [UIStringKeys.TabManualText]: "Entrada Manual",
+    [UIStringKeys.LabelManualBriefing]: "Briefing Manual / Notas",
+    [UIStringKeys.PlaceholderManualBriefing]: "Pega texto de documentos, correos, o describe la situación aquí...",
+    [UIStringKeys.LabelUploadImages]: "Subir Pantallazos (Máx 5)",
     [UIStringKeys.LabelCustomerType]: "Tipo de Cliente / Persona Objetivo",
     [UIStringKeys.PlaceholderCustomerType]: "Ej: Fundadores de PYMEs, Gamers Gen Z",
     [UIStringKeys.LabelMarketCategory]: "Mercado / Categoría",

@@ -9,22 +9,38 @@ import Stepper from './components/Stepper';
 import HelpBotButton from './components/HelpBotButton';
 import HelpBotModal from './components/HelpBotModal';
 import FeedbackButton from './components/FeedbackButton';
+import HistoryModal from './components/HistoryModal'; // Import
 import { initialDiagnosisData, initialFormulatedChallenge, getText } from './constants';
-import { ArrowLeftIcon, ArrowRightIcon } from './components/Icons';
+import { ArrowLeftIcon, ArrowRightIcon, DocumentTextIcon } from './components/Icons';
+
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<AppStep>(AppStep.DIAGNOSIS);
+  
+  // Initialize with an ID for persistence
   const [sessionData, setSessionData] = useState<StrategySessionData>({
+    id: generateId(),
+    lastModified: Date.now(),
     diagnosis: { ...initialDiagnosisData },
     challenge: { ...initialFormulatedChallenge },
     generatedPrompts: [],
   });
+  
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const [isHelpModalOpen, setIsHelpModalOpen] = useState<boolean>(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false); // New State
   const [currentLanguage, setCurrentLanguage] = useState<Language>(Language.ES);
 
+  // AUTO SAVE EFFECT
+  useEffect(() => {
+      if (sessionData.diagnosis.clientName || sessionData.diagnosis.businessChallenge) {
+          const key = `dm2_session_${sessionData.id}`;
+          localStorage.setItem(key, JSON.stringify(sessionData));
+      }
+  }, [sessionData]);
 
   const stepsOrder: AppStep[] = [
     AppStep.DIAGNOSIS,
@@ -49,17 +65,50 @@ const App: React.FC = () => {
     }
   }, [currentStepIndex, stepsOrder]);
 
+  // Update wrappers to update timestamp
   const updateDiagnosis = useCallback((data: Partial<DiagnosisData>) => {
-    setSessionData(prev => ({ ...prev, diagnosis: { ...prev.diagnosis, ...data } }));
+    setSessionData(prev => ({ 
+        ...prev, 
+        lastModified: Date.now(),
+        diagnosis: { ...prev.diagnosis, ...data } 
+    }));
   }, []);
   
   const updateChallenge = useCallback((data: Partial<FormulatedChallenge>) => {
-    setSessionData(prev => ({ ...prev, challenge: { ...prev.challenge, ...data } }));
+    setSessionData(prev => ({ 
+        ...prev, 
+        lastModified: Date.now(),
+        challenge: { ...prev.challenge, ...data } 
+    }));
   }, []);
 
   const updatePrompts = useCallback((prompts: string[]) => {
-    setSessionData(prev => ({ ...prev, generatedPrompts: prompts }));
+    setSessionData(prev => ({ 
+        ...prev, 
+        lastModified: Date.now(),
+        generatedPrompts: prompts 
+    }));
   }, []);
+
+  // History Actions
+  const handleLoadSession = (data: StrategySessionData) => {
+      setSessionData(data);
+      setCurrentStep(AppStep.DIAGNOSIS); // Reset to start or maybe infer step?
+      setIsHistoryModalOpen(false);
+  };
+
+  const handleNewSession = () => {
+      if (confirm(getText(currentLanguage, UIStringKeys.NewSessionConfirm))) {
+        setSessionData({
+            id: generateId(),
+            lastModified: Date.now(),
+            diagnosis: { ...initialDiagnosisData },
+            challenge: { ...initialFormulatedChallenge },
+            generatedPrompts: [],
+        });
+        setCurrentStep(AppStep.DIAGNOSIS);
+      }
+  };
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -109,31 +158,65 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-white shadow-2xl rounded-xl p-6 md:p-10 w-full min-h-[80vh] flex flex-col text-[#0A263B]">
-      <header className="mb-8 text-center relative">
-        <div className="absolute top-0 left-0 font-['Montserrat'] text-2xl font-bold text-[#F54963] uppercase">
-          LLYC
+      <header className="mb-8 relative flex flex-col items-center w-full">
+        {/* Logo Left */}
+        <div className="absolute top-0 left-0 flex items-center p-1">
+             <div className="font-['Montserrat'] text-2xl font-bold text-[#F54963] uppercase">
+                LLYC
+            </div>
         </div>
-        <h1 className="font-['Montserrat'] text-2xl md:text-3xl font-bold text-[#F54963] mt-10">
-          {getText(currentLanguage, UIStringKeys.AppName)}
-        </h1>
-        <p className="text-[#6D7475] mt-2 font-['Open_Sans']">{getText(currentLanguage, UIStringKeys.AppSubtitle)}</p>
-        <div className="absolute top-0 right-0 flex space-x-2">
-          <button 
-            onClick={() => setCurrentLanguage(Language.EN)}
-            className={`px-3 py-1 text-xs font-['Montserrat'] rounded-md ${currentLanguage === Language.EN ? 'bg-[#F54963] text-white' : 'bg-[#DDDDDD] text-[#0A263B] hover:bg-[#ACB4B6]'}`}
-            aria-pressed={currentLanguage === Language.EN}
-            aria-label={getText(currentLanguage, UIStringKeys.LanguageToggleEN)}
-          >
-            {getText(currentLanguage, UIStringKeys.LanguageToggleEN)}
-          </button>
-          <button 
-            onClick={() => setCurrentLanguage(Language.ES)}
-            className={`px-3 py-1 text-xs font-['Montserrat'] rounded-md ${currentLanguage === Language.ES ? 'bg-[#F54963] text-white' : 'bg-[#DDDDDD] text-[#0A263B] hover:bg-[#ACB4B6]'}`}
-            aria-pressed={currentLanguage === Language.ES}
-            aria-label={getText(currentLanguage, UIStringKeys.LanguageToggleES)}
-          >
-            {getText(currentLanguage, UIStringKeys.LanguageToggleES)}
-          </button>
+        
+        {/* Right Controls Container: Flex Column, Right Aligned */}
+        <div className="absolute top-0 right-0 flex flex-col items-end gap-3 z-10 p-1">
+          
+          {/* Row 1: Language Toggles */}
+          <div className="flex space-x-1 bg-[#F0F0F0] p-1 rounded-md">
+            <button 
+                onClick={() => setCurrentLanguage(Language.EN)}
+                className={`px-3 py-1 text-xs font-['Montserrat'] rounded-sm transition-colors ${currentLanguage === Language.EN ? 'bg-[#F54963] text-white shadow-sm' : 'text-[#6D7475] hover:bg-gray-200'}`}
+                aria-pressed={currentLanguage === Language.EN}
+                aria-label={getText(currentLanguage, UIStringKeys.LanguageToggleEN)}
+            >
+                {getText(currentLanguage, UIStringKeys.LanguageToggleEN)}
+            </button>
+            <button 
+                onClick={() => setCurrentLanguage(Language.ES)}
+                className={`px-3 py-1 text-xs font-['Montserrat'] rounded-sm transition-colors ${currentLanguage === Language.ES ? 'bg-[#F54963] text-white shadow-sm' : 'text-[#6D7475] hover:bg-gray-200'}`}
+                aria-pressed={currentLanguage === Language.ES}
+                aria-label={getText(currentLanguage, UIStringKeys.LanguageToggleES)}
+            >
+                {getText(currentLanguage, UIStringKeys.LanguageToggleES)}
+            </button>
+          </div>
+
+          {/* Row 2: Session Actions (Below Language) */}
+          <div className="flex space-x-2">
+             <button
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="px-3 py-1.5 text-xs font-['Montserrat'] font-medium rounded-md bg-[#36A7B7] text-white hover:bg-[#2A8E9D] shadow-sm transition-colors"
+                title={getText(currentLanguage, UIStringKeys.ButtonHistory)}
+            >
+                {getText(currentLanguage, UIStringKeys.ButtonHistory)}
+            </button>
+             <button
+                onClick={handleNewSession}
+                className="px-3 py-1.5 text-xs font-['Montserrat'] font-medium rounded-md bg-[#878E90] text-white hover:bg-[#6D7475] shadow-sm transition-colors"
+                title={getText(currentLanguage, UIStringKeys.ButtonNewSession)}
+            >
+                {getText(currentLanguage, UIStringKeys.ButtonNewSession)}
+            </button>
+          </div>
+
+        </div>
+       
+        {/* Title Section: Added larger margin-top for mobile to clear controls, constrained width */}
+        <div className="mt-24 md:mt-4 text-center w-full px-4">
+          <h1 className="font-['Montserrat'] text-2xl md:text-3xl font-bold text-[#F54963] leading-tight mx-auto max-w-lg md:max-w-2xl">
+            {getText(currentLanguage, UIStringKeys.AppName)}
+          </h1>
+          <p className="text-[#6D7475] mt-2 font-['Open_Sans'] text-sm md:text-base mx-auto max-w-lg">
+            {getText(currentLanguage, UIStringKeys.AppSubtitle)}
+          </p>
         </div>
       </header>
       
@@ -167,10 +250,17 @@ const App: React.FC = () => {
 
       <HelpBotButton onClick={() => setIsHelpModalOpen(true)} lang={currentLanguage} />
       <FeedbackButton lang={currentLanguage} />
+      
       <HelpBotModal 
         isOpen={isHelpModalOpen} 
         onClose={() => setIsHelpModalOpen(false)}
         lang={currentLanguage}
+      />
+      <HistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        lang={currentLanguage}
+        onLoadSession={handleLoadSession}
       />
     </div>
   );
