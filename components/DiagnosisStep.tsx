@@ -11,6 +11,7 @@ import { AcademicCapIcon, DocumentTextIcon, XMarkIcon, CpuChipIcon } from './Ico
 import Button from './common/Button'; 
 import AIHelperTextarea from './common/AIHelperTextarea';
 import * as pdfjsLib from 'pdfjs-dist';
+import * as mammoth from 'mammoth';
 import LoadingSpinner from './common/LoadingSpinner';
 
 interface DiagnosisStepProps {
@@ -24,7 +25,7 @@ interface DiagnosisStepProps {
 const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const [isParsingPdf, setIsParsingPdf] = useState(false);
+  const [isParsingFile, setIsParsingFile] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false); // State for the new analysis button
   const [activeTab, setActiveTab] = useState<'pdf' | 'images' | 'manual'>('pdf');
 
@@ -50,44 +51,77 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
     }
   };
 
-  const handlePdfChange = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     onUpdate({ briefingFileName: null, briefingFileContent: null });
 
     if (!file) return;
 
-    if (file.type === "application/pdf") {
-      setIsParsingPdf(true);
-      onUpdate({ briefingFileName: file.name });
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => ('str' in item ? item.str : '')).join(' ');
-          fullText += pageText + '\n\n';
+    onUpdate({ briefingFileName: file.name });
+    setIsParsingFile(true);
+
+    try {
+        if (file.type === "application/pdf") {
+            const arrayBuffer = await file.arrayBuffer();
+            // Ensure worker is available; if not, pdfjs might fail silently or throw.
+            // GlobalWorkerOptions should be set in index.tsx
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            let fullText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => ('str' in item ? item.str : '')).join(' ');
+                fullText += pageText + '\n\n';
+            }
+            if (!fullText.trim()) {
+                throw new Error("PDF seems empty or contains only images (OCR not supported).");
+            }
+            onUpdate({ briefingFileContent: fullText });
+
+        } else if (
+            file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || 
+            file.name.endsWith('.docx')
+        ) {
+            // DOCX Handling via Mammoth
+            const arrayBuffer = await file.arrayBuffer();
+            try {
+                // Check if mammoth is loaded correctly
+                if (!mammoth || !mammoth.extractRawText) {
+                    throw new Error("Word processor library not loaded.");
+                }
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                onUpdate({ briefingFileContent: result.value });
+                if (result.messages && result.messages.length > 0) {
+                    console.warn("Mammoth messages:", result.messages);
+                }
+            } catch (mammothError) {
+                console.error("Mammoth error:", mammothError);
+                throw new Error("Failed to process DOCX file structure.");
+            }
+
+        } else if (file.type === "text/plain" || file.name.endsWith('.txt')) {
+            // TXT Handling
+            const text = await file.text();
+            onUpdate({ briefingFileContent: text });
+            
+        } else {
+            // Unsupported format fallback
+            alert(getText(lang, UIStringKeys.AlertNonPDF));
+            onUpdate({ briefingFileName: file.name + " (Content not auto-extracted)" });
         }
-        onUpdate({ briefingFileContent: fullText });
-      } catch (error) {
-        console.error("Failed to parse PDF:", error);
+    } catch (error) {
+        console.error("Failed to parse file:", error);
+        let errorMessage = 'Unknown file parsing error.';
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
         onUpdate({ 
-          briefingFileName: `Error parsing ${file.name}`, 
-          briefingFileContent: `Error: ${error instanceof Error ? error.message : 'Unknown PDF parsing error.'}`
+          briefingFileName: `Error: ${file.name}`, 
+          briefingFileContent: null
         });
-      } finally {
-        setIsParsingPdf(false);
-      }
-    } else if (file.type === "text/plain") {
-        onUpdate({ briefingFileName: file.name });
-        const reader = new FileReader();
-        reader.onload = (e) => onUpdate({ briefingFileContent: e.target?.result as string });
-        reader.readAsText(file);
-    } else {
-         // UI Feedback for unsupported parsing in this env, but allow file name to persist
-         alert(getText(lang, UIStringKeys.AlertNonPDF));
-         onUpdate({ briefingFileName: file.name + " (Content not auto-extracted)" });
+        alert(`Error parsing file (${file.name}): ${errorMessage}`);
+    } finally {
+        setIsParsingFile(false);
     }
   };
 
@@ -238,21 +272,21 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                         type="file"
                         id="briefingFile"
                         name="briefingFile"
-                        accept=".pdf, .docx, .pptx, .txt"
-                        onChange={handlePdfChange}
+                        accept=".pdf, .docx, .txt"
+                        onChange={handleFileChange}
                         ref={fileInputRef}
                         className="hidden"
                         />
                         {data.briefingFileName ? (
                         <div className="flex items-center space-x-2 text-sm text-[#0A263B] bg-gray-100 px-3 py-1.5 rounded-md">
-                            {isParsingPdf && <LoadingSpinner size="sm" color="text-[#36A7B7]" lang={lang}/>}
+                            {isParsingFile && <LoadingSpinner size="sm" color="text-[#36A7B7]" lang={lang}/>}
                             <span>
-                                {isParsingPdf 
+                                {isParsingFile 
                                     ? getText(lang, UIStringKeys.FileParsing, { fileName: data.briefingFileName })
                                     : getText(lang, UIStringKeys.FileSelected, { fileName: data.briefingFileName })
                                 }
                             </span>
-                            {!isParsingPdf && (
+                            {!isParsingFile && (
                                 <button 
                                     onClick={handleRemoveFile} 
                                     className="text-[#F54963] hover:text-[#D43A50]"
@@ -267,7 +301,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                         <span className="text-sm text-[#ACB4B6] font-['Open_Sans']">{getText(lang, UIStringKeys.PlaceholderNoFileSelected)}</span>
                         )}
                     </div>
-                    <p className="text-xs text-[#878E90] mt-2 italic">Accepted: PDF, DOCX, PPTX, TXT.</p>
+                    <p className="text-xs text-[#878E90] mt-2 italic">Accepted: PDF, DOCX, TXT.</p>
                 </div>
             )}
 

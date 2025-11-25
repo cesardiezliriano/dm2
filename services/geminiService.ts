@@ -58,6 +58,7 @@ Your task is to analyze the available inputs (Client Name, Contextual Dropdowns,
 You must DEDUCE the likely Sector, Business Challenge, Customer Challenge, etc.
 
 **Rules:**
+*   **Language Priority:** The input documents might be in any language (English, Spanish, Portuguese, etc.). However, you **MUST** translate and output your analysis in the target language requested by the user prompt.
 *   **Context is King:** Use the 'Opportunity Type' (Newbiz/Upsell), 'Media Role' (Performance/Brand), and 'Digital Maturity' to infer the likely challenges.
 *   **Limited Input?** If the user provides NO text/files, use the 'Client Name' (if it is a known brand) and the dropdowns to hallucinates/infer a *likely* generic scenario for that sector.
 *   **Sector/Industry:** Be specific (e.g., "Fintech - Payments" not just "Finance").
@@ -97,7 +98,8 @@ export const analyzeBriefingInputs = async (data: DiagnosisData, lang: Language)
 
     // Constructing a prompt that handles missing optional data gracefully
     const userPrompt = `
-      **Language:** ${lang}
+      **TARGET LANGUAGE FOR OUTPUT:** ${lang === Language.ES ? 'SPANISH (Español)' : 'ENGLISH'}
+      
       **Client:** ${data.clientName}
       
       **Strategic Context (Mandatory):**
@@ -111,9 +113,11 @@ export const analyzeBriefingInputs = async (data: DiagnosisData, lang: Language)
       - File Content (Snippet): ${data.briefingFileContent ? data.briefingFileContent.substring(0, 8000) : "Not available (or non-text file)"}
 
       **Task:** 
-      Based on the client name and strategic context (and any optional notes), DEDUCE the likely Sector, Market, Product, Business Challenge, Customer Challenge, Customer Type, and Consumer Context.
-      Also try to identify if they have mentioned any CURRENT EFFORTS or previous failed attempts.
-      If inputs are sparse, provide a "best guess" typical for a client in this sector with this digital maturity.
+      1. Analyze all inputs above. The "File Content" or "Manual Notes" may be in English, Spanish, or another language.
+      2. **CRITICAL:** Interpret the information and output the extracted JSON fields **STRICTLY IN ${lang === Language.ES ? 'SPANISH' : 'ENGLISH'}**, regardless of the original document language.
+      3. Deduce the likely Sector, Market, Product, Business Challenge, Customer Challenge, Customer Type, and Consumer Context.
+      4. Try to identify if they have mentioned any CURRENT EFFORTS or previous failed attempts.
+      5. If inputs are sparse, provide a "best guess" typical for a client in this sector with this digital maturity.
     `;
 
     const responseSchema: Schema = {
@@ -179,7 +183,7 @@ export const generateChallengeFormulation = async (data: DiagnosisData, lang: La
 
   const userTextPrompt = `
     **Context:**
-    - Language: ${lang}
+    - Target Language: ${lang === Language.ES ? 'SPANISH' : 'ENGLISH'}
     - Client: ${data.clientName}
     - Opportunity Type: ${data.opportunityType}
     - Media Role: ${data.mediaRole}
@@ -199,6 +203,8 @@ export const generateChallengeFormulation = async (data: DiagnosisData, lang: La
     As the CSO (Digital Media & Adtech), provide the **3 Strategic Angles (A, B, C)** and then the **Rumelt Kernel** for the recommended path.
     Focus on Data, Tech, and Media Efficiency. 
     NO TACTICS.
+    
+    **CRITICAL:** The output MUST be in ${lang === Language.ES ? 'SPANISH' : 'ENGLISH'}.
     
     RETURN JSON ONLY.
   `;
@@ -280,12 +286,13 @@ export const generateSmartPrompts = async (
 
   const userPrompt = `
     Context:
-    - Language: ${lang}
+    - Target Language: ${lang === Language.ES ? 'SPANISH' : 'ENGLISH'}
     - Rumelt's Diagnosis: ${challenge.rumeltDiagnosis}
     - Rumelt's Guiding Policy: ${challenge.rumeltGuidingPolicy}
     - Behavioral Justification: ${challenge.behavioralJustification}
 
     Generate 5-7 Strategic Investigation Avenues (Not creative tactics) for the team to explore regarding Data, Media, and Technology.
+    Output MUST be in ${lang === Language.ES ? 'SPANISH' : 'ENGLISH'}.
   `;
 
   try {
@@ -331,14 +338,14 @@ export const suggestContextualItem = async (
 
   const userPrompt = `
     Context:
-    - Language: ${lang}
+    - Target Language: ${lang === Language.ES ? 'SPANISH' : 'ENGLISH'}
     - Client: ${context.clientName || "Unknown"}
     - Sector: ${context.sector || "Unknown"}
     
     Field: "${fieldLabel}"
     Current input: "${currentValue}"
     
-    Provide 3 suggestions from a Digital Media & Adtech Strategy perspective.
+    Provide 3 suggestions from a Digital Media & Adtech Strategy perspective in ${lang === Language.ES ? 'SPANISH' : 'ENGLISH'}.
   `;
 
   try {
