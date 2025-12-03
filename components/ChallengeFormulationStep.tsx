@@ -6,7 +6,7 @@ import { getText } from '../constants';
 import Button from './common/Button';
 import LoadingSpinner from './common/LoadingSpinner';
 import Card from './common/Card';
-import { LightBulbIcon, BrainIcon, CheckCircleIcon } from './Icons';
+import { BrainIcon, CheckCircleIcon } from './Icons';
 import AIHelperTextarea from './common/AIHelperTextarea';
 import SimpleMarkdown from './common/SimpleMarkdown'; // Import new component
 
@@ -79,7 +79,6 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Removed Icon */}
       <h2 className="text-2xl font-semibold text-[#36A7B7] mb-2 font-['Montserrat']"> 
         {getText(lang, UIStringKeys.HeaderChallengeFormulation)}
       </h2>
@@ -91,7 +90,6 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
         onClick={handleGenerateChallenge}
         isLoading={isLoading}
         disabled={isLoading || isDiagnosisIncomplete}
-        icon={<LightBulbIcon className="w-5 h-5" />}
         variant="primary"
       >
         {hasChallengeData 

@@ -4,8 +4,9 @@ import { StrategySessionData, Language, UIStringKeys } from '../types';
 import { getText } from '../constants';
 import Card from './common/Card';
 import Button from './common/Button';
-import { DocumentTextIcon, CheckCircleIcon, BrainIcon } from './Icons';
+import { DocumentTextIcon, CheckCircleIcon } from './Icons';
 import SimpleMarkdown from './common/SimpleMarkdown'; // Import parser
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 
 interface ResultsStepProps {
   data: StrategySessionData;
@@ -83,12 +84,16 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
     return output;
   }, [data, lang]);
 
-  const handleCopyToClipboard = useCallback(() => {
-    const textToCopy = formatForExport();
-    navigator.clipboard.writeText(textToCopy)
-      .then(() => alert(getText(lang, UIStringKeys.ResultsCopied)))
-      .catch(err => alert(getText(lang, UIStringKeys.FailedToCopyResults) + err));
-  }, [formatForExport, lang]);
+  const handleCopyToClipboard = async () => {
+    try {
+      const textToCopy = formatForExport();
+      await navigator.clipboard.writeText(textToCopy);
+      alert(getText(lang, UIStringKeys.ResultsCopied));
+    } catch (err) {
+      console.error("Clipboard copy failed:", err);
+      alert(getText(lang, UIStringKeys.FailedToCopyResults) + String(err));
+    }
+  };
 
   const handleDownloadTextFile = useCallback(() => {
     const textToDownload = formatForExport();
@@ -98,19 +103,112 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
     
     // FORMAT: CLIENTNAME_RetoEstrategico_YYYYMMDD_HHMM.md
     const clientName = (data.diagnosis.clientName || "Client").replace(/[^a-zA-Z0-9]/g, "_");
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    const timestamp = `${yyyy}${mm}${dd}_${hh}${min}`;
+    const timestamp = getTimestamp();
     
     element.download = `${clientName}_RetoEstrategico_${timestamp}.md`; 
     document.body.appendChild(element); 
     element.click();
     document.body.removeChild(element);
   }, [formatForExport, data.diagnosis.clientName]);
+
+  const handleDownloadDocx = useCallback(async () => {
+      const children: any[] = [];
+      const addHeading = (text: string, level: any) => children.push(new Paragraph({ text, heading: level, spacing: { before: 200, after: 100 } }));
+      const addPara = (text: string) => children.push(new Paragraph({ text, spacing: { after: 100 } }));
+      const addBold = (label: string, value: string) => children.push(new Paragraph({ children: [new TextRun({ text: label + ": ", bold: true }), new TextRun(value)] }));
+      const addBullet = (text: string) => children.push(new Paragraph({ text, bullet: { level: 0 } }));
+      
+      // Parse markdown-like strings from AI to DOCX runs
+      const addMarkdownPara = (markdownText: string) => {
+          if (!markdownText) return;
+          const lines = markdownText.split('\n');
+          lines.forEach(line => {
+             if (line.startsWith('### ')) {
+                 addHeading(line.replace('### ', ''), HeadingLevel.HEADING_3);
+             } else if (line.startsWith('## ')) {
+                 addHeading(line.replace('## ', ''), HeadingLevel.HEADING_2);
+             } else if (line.startsWith('* ') || line.startsWith('- ')) {
+                 addBullet(line.substring(2));
+             } else {
+                 if(line.trim() !== '') addPara(line);
+             }
+          });
+      };
+
+      // TITLE
+      addHeading(`${getText(lang, UIStringKeys.AppName)} - ${getText(lang, UIStringKeys.HeaderResults)}`, HeadingLevel.HEADING_1);
+
+      // 1. DIAGNOSIS
+      addHeading(getText(lang, UIStringKeys.HeaderDiagnosis), HeadingLevel.HEADING_2);
+      addBold(getText(lang, UIStringKeys.LabelClientName), data.diagnosis.clientName || "-");
+      addBold(getText(lang, UIStringKeys.LabelOpportunityType), data.diagnosis.opportunityType || "-");
+      addBold(getText(lang, UIStringKeys.LabelMediaRole), data.diagnosis.mediaRole || "-");
+      addBold(getText(lang, UIStringKeys.LabelDigitalMaturity), data.diagnosis.digitalMaturity || "-");
+      addBold(getText(lang, UIStringKeys.LabelBusinessChallenge), data.diagnosis.businessChallenge || "-");
+      addBold(getText(lang, UIStringKeys.LabelCustomerChallenge), data.diagnosis.customerChallenge || "-");
+
+      // 2. CHALLENGE
+      addHeading(getText(lang, UIStringKeys.HeaderChallengeFormulation), HeadingLevel.HEADING_2);
+      
+      const getSelectionLabel = (key: string) => data.challenge.selectedAlternative === key ? " [SELECTED]" : "";
+      
+      if (data.challenge.strategicAlternativeA) {
+          addHeading(getText(lang, UIStringKeys.LabelOptionA) + getSelectionLabel('A'), HeadingLevel.HEADING_3);
+          addMarkdownPara(data.challenge.strategicAlternativeA);
+      }
+      if (data.challenge.strategicAlternativeB) {
+           addHeading(getText(lang, UIStringKeys.LabelOptionB) + getSelectionLabel('B'), HeadingLevel.HEADING_3);
+           addMarkdownPara(data.challenge.strategicAlternativeB);
+      }
+      if (data.challenge.strategicAlternativeC) {
+           addHeading(getText(lang, UIStringKeys.LabelOptionC) + getSelectionLabel('C'), HeadingLevel.HEADING_3);
+           addMarkdownPara(data.challenge.strategicAlternativeC);
+      }
+
+      // Rumelt Kernel
+      addHeading(getText(lang, UIStringKeys.HeaderRumeltDiagnosis), HeadingLevel.HEADING_3);
+      addMarkdownPara(data.challenge.rumeltDiagnosis);
+
+      addHeading(getText(lang, UIStringKeys.HeaderRumeltGuidingPolicy), HeadingLevel.HEADING_3);
+      addMarkdownPara(data.challenge.rumeltGuidingPolicy);
+      
+      // 3. PROMPTS
+      addHeading(getText(lang, UIStringKeys.HeaderSmartPrompts), HeadingLevel.HEADING_2);
+      if (data.generatedPrompts.length > 0) {
+        data.generatedPrompts.forEach(p => addBullet(p));
+      } else {
+        addPara(getText(lang, UIStringKeys.TextNoPromptsGenerated));
+      }
+
+      const doc = new Document({
+          sections: [{
+              properties: {},
+              children: children,
+          }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      
+      const element = document.createElement("a");
+      element.href = URL.createObjectURL(blob);
+      const clientName = (data.diagnosis.clientName || "Client").replace(/[^a-zA-Z0-9]/g, "_");
+      const timestamp = getTimestamp();
+      element.download = `${clientName}_RetoEstrategico_${timestamp}.docx`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+
+  }, [data, lang]);
+
+  const getTimestamp = () => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    return `${yyyy}${mm}${dd}_${hh}${min}`;
+  };
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -122,7 +220,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
         {getText(lang, UIStringKeys.DescriptionResults)}
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Button 
           onClick={handleCopyToClipboard} 
           icon={<DocumentTextIcon className="w-5 h-5" />}
@@ -136,6 +234,13 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
           variant="primary"
         >
           {getText(lang, UIStringKeys.DownloadAsMD)}
+        </Button>
+         <Button 
+          onClick={handleDownloadDocx} 
+          icon={<DocumentTextIcon className="w-5 h-5" />}
+          variant="primary"
+        >
+          {getText(lang, UIStringKeys.DownloadAsDOCX)}
         </Button>
       </div>
 

@@ -102,15 +102,16 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     
     [UIStringKeys.ButtonBack]: "Back",
     [UIStringKeys.ButtonNext]: "Next",
-    [UIStringKeys.ButtonGenerateStrategicChallenge]: "Generate Strategic Challenge Kernel (CSO)",
-    [UIStringKeys.ButtonRegenerateChallenge]: "Regenerate Challenge Kernel",
+    [UIStringKeys.ButtonGenerateStrategicChallenge]: "Generate Challenge Definition",
+    [UIStringKeys.ButtonRegenerateChallenge]: "Regenerate Challenge Definition",
     [UIStringKeys.ButtonGenerateSmartPrompts]: "Generate Strategic Avenues",
     [UIStringKeys.ButtonRegeneratePrompts]: "Regenerate Avenues",
     [UIStringKeys.ButtonAnalyzeBriefing]: "Analyze Briefing with AI", // UPDATED
     [UIStringKeys.ButtonAnalyzing]: "Analyzing Briefing...", // UPDATED
     [UIStringKeys.ButtonSkipStep]: "Skip this step (Use Defaults)", // NEW
     [UIStringKeys.CopyToClipboard]: "Copy to Clipboard",
-    [UIStringKeys.DownloadAsMD]: "Download as .md File",
+    [UIStringKeys.DownloadAsMD]: "Download as .md",
+    [UIStringKeys.DownloadAsDOCX]: "Download as .docx", // NEW
     [UIStringKeys.ResultsCopied]: "Results copied to clipboard!",
     [UIStringKeys.FailedToCopyResults]: "Failed to copy results: ",
     [UIStringKeys.ButtonChooseFile]: "Choose File",
@@ -236,7 +237,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.HelpTopic_Export_Q]: "¿Cómo puedo guardar o compartir mi trabajo?",
     [UIStringKeys.HelpTopic_Export_A]: "En el paso final \"Resumen y Exportación\", puedes revisar toda la información de tu sesión.\nUsa el botón \"Copiar al Portapapeles\" para copiar el resumen completo en formato Markdown.\nUsa el botón \"Descargar como Archivo .md\" para guardar el resumen como un archivo Markdown para compartir fácilmente y referencia futura.",
     [UIStringKeys.HelpTopic_AIGeneration_Q]: "¿Cómo funciona la generación por IA? ¿Qué pasa si veo errores?",
-    [UIStringKeys.HelpTopic_AIGeneration_A]: "DM 2. Definición del Reto utiliza la IA Gemini de Google para analizar tus entradas y generar insights estratégicos y prompts basados en el marco de Rumelt.\nSi encuentras errores:\n- Asegúrate de que todos los campos requeridos en el paso de Diagnóstico estén completos.\n- Verifica tu conexión a internet.\n- Intenta regenerar el contenido. Si el problema persiste, el servicio de IA podría estar temporalmente no disponible.",
+    [UIStringKeys.HelpTopic_AIGeneration_A]: "DM 2. Definición del Reto utiliza la IA Gemini de Google para analizar tus entradas y generar insights estratégicos y prompts basados en el marco de Rumelt.\nIf you encounter errors:\n- Asegúrate de que todos los campos requeridos en el paso de Diagnóstico estén completos.\n- Verifica tu conexión a internet.\n- Intenta regenerar el contenido. Si el problema persiste, el servicio de IA podría estar temporalmente no disponible.",
     [UIStringKeys.HelpTopic_Navigation_Q]: "¿Cómo me muevo entre los pasos?",
     [UIStringKeys.HelpTopic_Navigation_A]: "Usa los botones \"Siguiente\" y \"Anterior\" en la parte inferior de la página para navegar secuencialmente a través de los pasos.\nTambién puedes hacer clic en los nombres de los pasos en el indicador de progreso en la parte superior para saltar a un paso previamente completado o al paso actual.",
 
@@ -246,8 +247,8 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
 
     [UIStringKeys.ButtonBack]: "Anterior",
     [UIStringKeys.ButtonNext]: "Siguiente",
-    [UIStringKeys.ButtonGenerateStrategicChallenge]: "Generar Núcleo del Reto (CSO)",
-    [UIStringKeys.ButtonRegenerateChallenge]: "Regenerar Núcleo del Reto",
+    [UIStringKeys.ButtonGenerateStrategicChallenge]: "Generar Definición del Reto",
+    [UIStringKeys.ButtonRegenerateChallenge]: "Regenerar Definición del Reto",
     [UIStringKeys.ButtonGenerateSmartPrompts]: "Generar Vías Estratégicas",
     [UIStringKeys.ButtonRegeneratePrompts]: "Regenerar Vías",
     [UIStringKeys.ButtonAnalyzeBriefing]: "Analizar briefing con IA", 
@@ -255,6 +256,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.ButtonSkipStep]: "Omitir paso (Usar Defaults)", // NEW
     [UIStringKeys.CopyToClipboard]: "Copiar al Portapapeles",
     [UIStringKeys.DownloadAsMD]: "Descargar como .md",
+    [UIStringKeys.DownloadAsDOCX]: "Descargar como .docx", // NEW
     [UIStringKeys.ResultsCopied]: "¡Resultados copiados al portapapeles!",
     [UIStringKeys.FailedToCopyResults]: "Error al copiar resultados: ",
     [UIStringKeys.ButtonChooseFile]: "Elegir Archivo",
@@ -298,7 +300,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.LabelMediaRole]: "Rol Esperado de Medios",
     [UIStringKeys.LabelDigitalMaturity]: "Nivel de Madurez Digital",
 
-    [UIStringKeys.LabelUploadBriefing]: "Briefing / Entradas",
+    [UIStringKeys.LabelUploadBriefing]: "Briefing / Inputs",
     [UIStringKeys.LabelBriefingSource]: "Fuente del Briefing (Opcional)",
     [UIStringKeys.TabPDF]: "Subir Archivo",
     [UIStringKeys.TabImages]: "Pantallazos",

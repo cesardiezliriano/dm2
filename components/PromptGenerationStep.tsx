@@ -6,7 +6,6 @@ import { getText } from '../constants';
 import Button from './common/Button';
 import LoadingSpinner from './common/LoadingSpinner';
 import Card from './common/Card';
-import { SparklesIcon } from './Icons';
 
 interface PromptGenerationStepProps {
   challengeData: FormulatedChallenge;
@@ -60,7 +59,6 @@ const PromptGenerationStep: React.FC<PromptGenerationStepProps> = ({
   return (
     <div className="space-y-6 animate-fadeIn">
       <h2 className="text-2xl font-semibold text-[#36A7B7] mb-2 flex items-center font-['Montserrat']"> 
-        <SparklesIcon className="w-7 h-7 mr-2 text-[#36A7B7]" /> 
         {getText(lang, UIStringKeys.HeaderSmartPrompts)}
       </h2>
       <p className="text-[#6D7475] mb-6 font-['Open_Sans']"> 
@@ -71,7 +69,6 @@ const PromptGenerationStep: React.FC<PromptGenerationStepProps> = ({
         onClick={handleGeneratePrompts}
         isLoading={isLoading}
         disabled={isLoading || !isChallengeKernelReady}
-        icon={<SparklesIcon className="w-5 h-5" />}
         variant="primary"
       >
         {generatedPrompts.length > 0 

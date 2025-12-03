@@ -187,6 +187,7 @@ export enum UIStringKeys {
   ButtonSkipStep = "ButtonSkipStep", // New
   CopyToClipboard = "CopyToClipboard",
   DownloadAsMD = "DownloadAsMD",
+  DownloadAsDOCX = "DownloadAsDOCX",
   ResultsCopied = "ResultsCopied",
   FailedToCopyResults = "FailedToCopyResults",
   ButtonChooseFile = "ButtonChooseFile", 
