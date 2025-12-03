@@ -8,7 +8,6 @@ import LoadingSpinner from './common/LoadingSpinner';
 import Card from './common/Card';
 import { BrainIcon, CheckCircleIcon } from './Icons';
 import AIHelperTextarea from './common/AIHelperTextarea';
-import SimpleMarkdown from './common/SimpleMarkdown'; // Import new component
 
 interface ChallengeFormulationStepProps {
   diagnosisData: DiagnosisData;
@@ -133,9 +132,12 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
                             <span className="font-bold text-[#F54963] font-['Montserrat']">{getText(lang, UIStringKeys.LabelOptionA)}</span>
                             {challengeData.selectedAlternative === 'A' && <CheckCircleIcon className="w-6 h-6 text-[#F54963]" />}
                          </div>
-                         <div className="flex-grow overflow-y-auto max-h-[400px]">
-                            <SimpleMarkdown text={challengeData.strategicAlternativeA} className="text-sm" />
-                         </div>
+                         <textarea
+                            name="strategicAlternativeA"
+                            value={challengeData.strategicAlternativeA}
+                            onChange={handleInputChange}
+                            className="w-full flex-grow p-2 bg-transparent border-none outline-none resize-none text-sm font-['Open_Sans'] text-[#0A263B] min-h-[300px]"
+                         />
                     </div>
 
                     {/* OPTION B */}
@@ -147,9 +149,12 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
                             <span className="font-bold text-[#36A7B7] font-['Montserrat']">{getText(lang, UIStringKeys.LabelOptionB)}</span>
                             {challengeData.selectedAlternative === 'B' && <CheckCircleIcon className="w-6 h-6 text-[#36A7B7]" />}
                          </div>
-                         <div className="flex-grow overflow-y-auto max-h-[400px]">
-                            <SimpleMarkdown text={challengeData.strategicAlternativeB} className="text-sm" />
-                         </div>
+                         <textarea
+                            name="strategicAlternativeB"
+                            value={challengeData.strategicAlternativeB}
+                            onChange={handleInputChange}
+                            className="w-full flex-grow p-2 bg-transparent border-none outline-none resize-none text-sm font-['Open_Sans'] text-[#0A263B] min-h-[300px]"
+                         />
                     </div>
 
                     {/* OPTION C */}
@@ -161,9 +166,12 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
                             <span className="font-bold text-[#76CC9B] font-['Montserrat']">{getText(lang, UIStringKeys.LabelOptionC)}</span>
                             {challengeData.selectedAlternative === 'C' && <CheckCircleIcon className="w-6 h-6 text-[#76CC9B]" />}
                          </div>
-                         <div className="flex-grow overflow-y-auto max-h-[400px]">
-                            <SimpleMarkdown text={challengeData.strategicAlternativeC} className="text-sm" />
-                         </div>
+                         <textarea
+                            name="strategicAlternativeC"
+                            value={challengeData.strategicAlternativeC}
+                            onChange={handleInputChange}
+                            className="w-full flex-grow p-2 bg-transparent border-none outline-none resize-none text-sm font-['Open_Sans'] text-[#0A263B] min-h-[300px]"
+                         />
                     </div>
                 </div>
             </div>

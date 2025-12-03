@@ -34,6 +34,35 @@ const App: React.FC = () => {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false); // New State
   const [currentLanguage, setCurrentLanguage] = useState<Language>(Language.ES);
 
+  // AUTO LOAD LATEST SESSION ON MOUNT
+  useEffect(() => {
+    const allKeys = Object.keys(localStorage);
+    let mostRecentSession: StrategySessionData | null = null;
+
+    allKeys.forEach(key => {
+      if (key.startsWith('dm2_session_')) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || '');
+          // Check if data is valid and newer
+          if (data && data.lastModified) {
+             if (!mostRecentSession || (data.lastModified > mostRecentSession.lastModified)) {
+               mostRecentSession = data;
+             }
+          }
+        } catch (e) {
+          console.error("Error parsing session on load", key);
+        }
+      }
+    });
+
+    if (mostRecentSession) {
+        // Load the data
+        setSessionData(mostRecentSession);
+        // We stay on DIAGNOSIS step by default so user sees their input, 
+        // but the data is there if they click Next.
+    }
+  }, []);
+
   // AUTO SAVE EFFECT
   useEffect(() => {
       if (sessionData.diagnosis.clientName || sessionData.diagnosis.businessChallenge) {
