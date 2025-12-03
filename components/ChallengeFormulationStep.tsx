@@ -8,6 +8,7 @@ import LoadingSpinner from './common/LoadingSpinner';
 import Card from './common/Card';
 import { LightBulbIcon, BrainIcon, CheckCircleIcon } from './Icons';
 import AIHelperTextarea from './common/AIHelperTextarea';
+import SimpleMarkdown from './common/SimpleMarkdown'; // Import new component
 
 interface ChallengeFormulationStepProps {
   diagnosisData: DiagnosisData;
@@ -128,52 +129,43 @@ const ChallengeFormulationStep: React.FC<ChallengeFormulationStepProps> = ({
                     {/* OPTION A */}
                     <div 
                         onClick={() => handleSelectionChange('A')}
-                        className={`cursor-pointer p-4 rounded-lg border-2 transition-all relative ${challengeData.selectedAlternative === 'A' ? 'border-[#F54963] bg-[#F54963]/5 shadow-md' : 'border-[#DDDDDD] hover:border-[#F54963]/50'}`}
+                        className={`cursor-pointer p-4 rounded-lg border-2 transition-all relative flex flex-col h-full ${challengeData.selectedAlternative === 'A' ? 'border-[#F54963] bg-[#F54963]/5 shadow-md' : 'border-[#DDDDDD] hover:border-[#F54963]/50'}`}
                     >
-                         <div className="flex justify-between items-center mb-2">
+                         <div className="flex justify-between items-center mb-2 pb-2 border-b border-[#DDDDDD]/50">
                             <span className="font-bold text-[#F54963] font-['Montserrat']">{getText(lang, UIStringKeys.LabelOptionA)}</span>
                             {challengeData.selectedAlternative === 'A' && <CheckCircleIcon className="w-6 h-6 text-[#F54963]" />}
                          </div>
-                         <textarea 
-                             readOnly 
-                             className="w-full bg-transparent resize-none text-sm text-[#0A263B] font-['Open_Sans'] outline-none cursor-pointer"
-                             rows={8}
-                             value={challengeData.strategicAlternativeA}
-                         />
+                         <div className="flex-grow overflow-y-auto max-h-[400px]">
+                            <SimpleMarkdown text={challengeData.strategicAlternativeA} className="text-sm" />
+                         </div>
                     </div>
 
                     {/* OPTION B */}
                     <div 
                         onClick={() => handleSelectionChange('B')}
-                        className={`cursor-pointer p-4 rounded-lg border-2 transition-all relative ${challengeData.selectedAlternative === 'B' ? 'border-[#36A7B7] bg-[#36A7B7]/5 shadow-md' : 'border-[#DDDDDD] hover:border-[#36A7B7]/50'}`}
+                        className={`cursor-pointer p-4 rounded-lg border-2 transition-all relative flex flex-col h-full ${challengeData.selectedAlternative === 'B' ? 'border-[#36A7B7] bg-[#36A7B7]/5 shadow-md' : 'border-[#DDDDDD] hover:border-[#36A7B7]/50'}`}
                     >
-                         <div className="flex justify-between items-center mb-2">
+                         <div className="flex justify-between items-center mb-2 pb-2 border-b border-[#DDDDDD]/50">
                             <span className="font-bold text-[#36A7B7] font-['Montserrat']">{getText(lang, UIStringKeys.LabelOptionB)}</span>
                             {challengeData.selectedAlternative === 'B' && <CheckCircleIcon className="w-6 h-6 text-[#36A7B7]" />}
                          </div>
-                         <textarea 
-                             readOnly 
-                             className="w-full bg-transparent resize-none text-sm text-[#0A263B] font-['Open_Sans'] outline-none cursor-pointer"
-                             rows={8}
-                             value={challengeData.strategicAlternativeB}
-                         />
+                         <div className="flex-grow overflow-y-auto max-h-[400px]">
+                            <SimpleMarkdown text={challengeData.strategicAlternativeB} className="text-sm" />
+                         </div>
                     </div>
 
                     {/* OPTION C */}
                     <div 
                         onClick={() => handleSelectionChange('C')}
-                        className={`cursor-pointer p-4 rounded-lg border-2 transition-all relative ${challengeData.selectedAlternative === 'C' ? 'border-[#76CC9B] bg-[#76CC9B]/5 shadow-md' : 'border-[#DDDDDD] hover:border-[#76CC9B]/50'}`}
+                        className={`cursor-pointer p-4 rounded-lg border-2 transition-all relative flex flex-col h-full ${challengeData.selectedAlternative === 'C' ? 'border-[#76CC9B] bg-[#76CC9B]/5 shadow-md' : 'border-[#DDDDDD] hover:border-[#76CC9B]/50'}`}
                     >
-                         <div className="flex justify-between items-center mb-2">
+                         <div className="flex justify-between items-center mb-2 pb-2 border-b border-[#DDDDDD]/50">
                             <span className="font-bold text-[#76CC9B] font-['Montserrat']">{getText(lang, UIStringKeys.LabelOptionC)}</span>
                             {challengeData.selectedAlternative === 'C' && <CheckCircleIcon className="w-6 h-6 text-[#76CC9B]" />}
                          </div>
-                         <textarea 
-                             readOnly 
-                             className="w-full bg-transparent resize-none text-sm text-[#0A263B] font-['Open_Sans'] outline-none cursor-pointer"
-                             rows={8}
-                             value={challengeData.strategicAlternativeC}
-                         />
+                         <div className="flex-grow overflow-y-auto max-h-[400px]">
+                            <SimpleMarkdown text={challengeData.strategicAlternativeC} className="text-sm" />
+                         </div>
                     </div>
                 </div>
             </div>

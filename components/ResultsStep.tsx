@@ -5,6 +5,7 @@ import { getText } from '../constants';
 import Card from './common/Card';
 import Button from './common/Button';
 import { DocumentTextIcon, CheckCircleIcon, BrainIcon } from './Icons';
+import SimpleMarkdown from './common/SimpleMarkdown'; // Import parser
 
 interface ResultsStepProps {
   data: StrategySessionData;
@@ -139,10 +140,9 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
       </div>
 
       <Card>
-        <div className="prose prose-sm max-w-none font-['Open_Sans'] text-[#0A263B]">
-          <pre className="whitespace-pre-wrap bg-[#F8F8F8] p-4 rounded-lg border border-[#DDDDDD] overflow-x-auto text-sm">
-            {formatForExport()}
-          </pre>
+        <div className="bg-[#F8F8F8] p-6 rounded-lg border border-[#DDDDDD] overflow-y-auto max-h-[70vh]">
+          {/* Use the new visualizer */}
+          <SimpleMarkdown text={formatForExport()} />
         </div>
       </Card>
     </div>
