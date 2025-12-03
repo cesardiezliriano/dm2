@@ -7,7 +7,7 @@ import Input from './common/Input';
 import Textarea from './common/Textarea';
 import Select from './common/Select';
 import Card from './common/Card';
-import { AcademicCapIcon, DocumentTextIcon, XMarkIcon, CpuChipIcon } from './Icons';
+import { AcademicCapIcon, DocumentTextIcon, XMarkIcon, CpuChipIcon, ArrowRightIcon } from './Icons';
 import Button from './common/Button'; 
 import AIHelperTextarea from './common/AIHelperTextarea';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -27,7 +27,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false); // State for the new analysis button
-  const [activeTab, setActiveTab] = useState<'pdf' | 'images' | 'manual'>('pdf');
+  const [activeTab, setActiveTab] = useState<'pdf' | 'images' | 'manual'>('manual'); // Default to manual as per req
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -63,8 +63,6 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
     try {
         if (file.type === "application/pdf") {
             const arrayBuffer = await file.arrayBuffer();
-            // Ensure worker is available; if not, pdfjs might fail silently or throw.
-            // GlobalWorkerOptions should be set in index.tsx
             const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
             let fullText = '';
             for (let i = 1; i <= pdf.numPages; i++) {
@@ -82,28 +80,26 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
             file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || 
             file.name.endsWith('.docx')
         ) {
-            // DOCX Handling via Mammoth
             const arrayBuffer = await file.arrayBuffer();
             try {
-                // Check if mammoth is loaded correctly
                 if (!mammoth || !mammoth.extractRawText) {
                     throw new Error("Word processor library not loaded.");
                 }
                 const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
                 onUpdate({ briefingFileContent: result.value });
-                if (result.messages && result.messages.length > 0) {
-                    console.warn("Mammoth messages:", result.messages);
-                }
             } catch (mammothError) {
                 console.error("Mammoth error:", mammothError);
                 throw new Error("Failed to process DOCX file structure.");
             }
 
         } else if (file.type === "text/plain" || file.name.endsWith('.txt')) {
-            // TXT Handling
             const text = await file.text();
             onUpdate({ briefingFileContent: text });
             
+        } else if (file.type.startsWith('video/')) {
+            // Video handling: Just store the filename context for now
+             onUpdate({ briefingFileName: `[VIDEO FILE] ${file.name}` });
+             // No content extraction for video in browser
         } else {
             // Unsupported format fallback
             alert(getText(lang, UIStringKeys.AlertNonPDF));
@@ -177,15 +173,15 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
       onUpdate({ screenshots: updated });
   };
 
-  // NEW: Analysis Function
+  const hasMandatoryInput = data.clientName && (data.manualBriefingText || data.briefingFileName);
+
   const handleAnalyzeBriefing = async () => {
-      if (!data.clientName) {
-          alert(getText(lang, UIStringKeys.ErrorDiagnosisNotComplete));
+      if (!hasMandatoryInput) {
+          alert("Please provide the Client Name and either Manual Text or a File.");
           return;
       }
       setIsAnalyzing(true);
       try {
-          // Analyze using just the context + client name if no file/text provided
           const extractedData = await analyzeBriefingInputs(data, lang);
           onUpdate(extractedData);
       } catch (e) {
@@ -193,6 +189,38 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
       } finally {
           setIsAnalyzing(false);
       }
+  };
+
+  // NEW: Skip Step Function
+  const handleSkipStep = async () => {
+    if (!data.clientName) {
+        alert("Please enter a Client Name before skipping.");
+        return;
+    }
+    
+    // Fill defaults if empty
+    onUpdate({
+        opportunityType: data.opportunityType || OpportunityType.NEWBIZ,
+        mediaRole: data.mediaRole || MediaRole.MIXED,
+        digitalMaturity: data.digitalMaturity || DigitalMaturity.MID,
+    });
+    
+    // Trigger analysis with what we have
+    setIsAnalyzing(true);
+    try {
+        const extractedData = await analyzeBriefingInputs({
+            ...data,
+            opportunityType: data.opportunityType || OpportunityType.NEWBIZ,
+            mediaRole: data.mediaRole || MediaRole.MIXED,
+            digitalMaturity: data.digitalMaturity || DigitalMaturity.MID,
+        }, lang);
+        onUpdate(extractedData);
+    } catch (e) {
+        // Fallback if AI fails during skip
+        console.error("Analysis failed during skip", e);
+    } finally {
+        setIsAnalyzing(false);
+    }
   };
 
   const funnelStageOptions = defaultFunnelStages.map(stage => ({ value: stage, label: stage }));
@@ -204,19 +232,27 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <header className="mb-6">
-        <h2 className="text-2xl font-semibold text-[#36A7B7] flex items-center font-['Montserrat']"> 
-          <AcademicCapIcon className="w-7 h-7 mr-2 text-[#36A7B7]" /> 
-          {getText(lang, UIStringKeys.HeaderDiagnosis)}
-        </h2>
-        <p className="text-[#6D7475] mt-1 font-['Open_Sans']"> 
-          {getText(lang, UIStringKeys.DescriptionDiagnosis)}
-        </p>
+      <header className="mb-6 flex justify-between items-end">
+        <div>
+            <h2 className="text-2xl font-semibold text-[#36A7B7] flex items-center font-['Montserrat']"> 
+            <AcademicCapIcon className="w-7 h-7 mr-2 text-[#36A7B7]" /> 
+            {getText(lang, UIStringKeys.HeaderDiagnosis)}
+            </h2>
+            <p className="text-[#6D7475] mt-1 font-['Open_Sans']"> 
+            {getText(lang, UIStringKeys.DescriptionDiagnosis)}
+            </p>
+        </div>
+        <button 
+            onClick={handleSkipStep}
+            className="text-xs text-[#878E90] underline hover:text-[#F54963] font-['Open_Sans']"
+        >
+            {getText(lang, UIStringKeys.ButtonSkipStep)}
+        </button>
       </header>
 
       <Card title={getText(lang, UIStringKeys.HeaderProjectSetup)}>
         <Input 
-          label={getText(lang, UIStringKeys.LabelClientName)} 
+          label={`${getText(lang, UIStringKeys.LabelClientName)} *`} 
           id="clientName" 
           name="clientName" 
           value={data.clientName} 
@@ -224,19 +260,18 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
           placeholder="e.g., Acme Corp, LLYC Foundation" 
         />
         
-        {/* NEW DROPDOWNS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Select label={getText(lang, UIStringKeys.LabelOpportunityType)} id="opportunityType" name="opportunityType" value={data.opportunityType} onChange={handleChange} options={opportunityOptions} lang={lang} />
-            <Select label={getText(lang, UIStringKeys.LabelMediaRole)} id="mediaRole" name="mediaRole" value={data.mediaRole} onChange={handleChange} options={mediaRoleOptions} lang={lang} />
-            <Select label={getText(lang, UIStringKeys.LabelDigitalMaturity)} id="digitalMaturity" name="digitalMaturity" value={data.digitalMaturity} onChange={handleChange} options={maturityOptions} lang={lang} />
-        </div>
-
         {/* --- BRIEFING SOURCE TABS --- */}
         <div className="mt-6">
             <label className="block text-sm font-medium text-[#0A263B] mb-2 font-['Open_Sans']">
                 {getText(lang, UIStringKeys.LabelBriefingSource)}
             </label>
             <div className="flex space-x-1 bg-[#F8F8F8] p-1 rounded-lg border border-[#DDDDDD] mb-4">
+                 <button
+                    onClick={() => setActiveTab('manual')}
+                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors font-['Montserrat'] ${activeTab === 'manual' ? 'bg-white text-[#F54963] shadow-sm' : 'text-[#878E90] hover:text-[#0A263B]'}`}
+                >
+                    {getText(lang, UIStringKeys.TabManualText)}
+                </button>
                 <button
                     onClick={() => setActiveTab('pdf')}
                     className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors font-['Montserrat'] ${activeTab === 'pdf' ? 'bg-white text-[#F54963] shadow-sm' : 'text-[#878E90] hover:text-[#0A263B]'}`}
@@ -249,13 +284,22 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                 >
                     {getText(lang, UIStringKeys.TabImages)}
                 </button>
-                <button
-                    onClick={() => setActiveTab('manual')}
-                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors font-['Montserrat'] ${activeTab === 'manual' ? 'bg-white text-[#F54963] shadow-sm' : 'text-[#878E90] hover:text-[#0A263B]'}`}
-                >
-                    {getText(lang, UIStringKeys.TabManualText)}
-                </button>
             </div>
+
+            {/* TAB CONTENT: MANUAL TEXT */}
+            {activeTab === 'manual' && (
+                <div className="animate-fadeIn">
+                    <Textarea 
+                        label={`${getText(lang, UIStringKeys.LabelManualBriefing)} *`}
+                        id="manualBriefingText"
+                        name="manualBriefingText"
+                        value={data.manualBriefingText || ''}
+                        onChange={handleChange}
+                        placeholder={getText(lang, UIStringKeys.PlaceholderManualBriefing)}
+                        rows={6}
+                    />
+                </div>
+            )}
 
             {/* TAB CONTENT: PDF/FILES */}
             {activeTab === 'pdf' && (
@@ -272,7 +316,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                         type="file"
                         id="briefingFile"
                         name="briefingFile"
-                        accept=".pdf, .docx, .txt"
+                        accept=".pdf, .docx, .txt, video/*" 
                         onChange={handleFileChange}
                         ref={fileInputRef}
                         className="hidden"
@@ -301,7 +345,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                         <span className="text-sm text-[#ACB4B6] font-['Open_Sans']">{getText(lang, UIStringKeys.PlaceholderNoFileSelected)}</span>
                         )}
                     </div>
-                    <p className="text-xs text-[#878E90] mt-2 italic">Accepted: PDF, DOCX, TXT.</p>
+                    <p className="text-xs text-[#878E90] mt-2 italic">Accepted: PDF, DOCX, TXT, Video.</p>
                 </div>
             )}
 
@@ -348,33 +392,27 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
                     )}
                 </div>
             )}
-
-            {/* TAB CONTENT: MANUAL TEXT */}
-            {activeTab === 'manual' && (
-                <div className="animate-fadeIn">
-                    <Textarea 
-                        label={getText(lang, UIStringKeys.LabelManualBriefing)}
-                        id="manualBriefingText"
-                        name="manualBriefingText"
-                        value={data.manualBriefingText || ''}
-                        onChange={handleChange}
-                        placeholder={getText(lang, UIStringKeys.PlaceholderManualBriefing)}
-                        rows={6}
-                    />
-                </div>
-            )}
         </div>
         {/* --- END TABS --- */}
 
-        {/* ANALYSIS BUTTON - Updated (No icon, new text key) */}
-        <div className="mt-6 border-t border-[#DDDDDD] pt-4 flex justify-center">
+        {/* GUIDED OPTIONAL FIELDS */}
+        <div className="mt-6 pt-4 border-t border-[#DDDDDD]">
+             <h4 className="text-sm font-semibold text-[#0A263B] mb-3 font-['Montserrat']">Optional Guided Context</h4>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Select label={getText(lang, UIStringKeys.LabelOpportunityType)} id="opportunityType" name="opportunityType" value={data.opportunityType} onChange={handleChange} options={opportunityOptions} lang={lang} />
+                <Select label={getText(lang, UIStringKeys.LabelMediaRole)} id="mediaRole" name="mediaRole" value={data.mediaRole} onChange={handleChange} options={mediaRoleOptions} lang={lang} />
+                <Select label={getText(lang, UIStringKeys.LabelDigitalMaturity)} id="digitalMaturity" name="digitalMaturity" value={data.digitalMaturity} onChange={handleChange} options={maturityOptions} lang={lang} />
+            </div>
+        </div>
+
+        {/* ANALYSIS BUTTON */}
+        <div className="mt-6 pt-4 flex justify-center">
             <Button 
                 onClick={handleAnalyzeBriefing} 
-                disabled={isAnalyzing || !data.clientName} 
+                disabled={isAnalyzing || !hasMandatoryInput} 
                 isLoading={isAnalyzing}
                 variant="primary"
                 className="w-full md:w-auto"
-                // icon removed
             >
                 {isAnalyzing ? getText(lang, UIStringKeys.ButtonAnalyzing) : getText(lang, UIStringKeys.ButtonAnalyzeBriefing)}
             </Button>
@@ -385,9 +423,9 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card title={getText(lang, UIStringKeys.HeaderBusinessMarketContext)}>
-          <Input label={`${getText(lang, UIStringKeys.LabelCustomerType)} *`} id="customerType" name="customerType" value={data.customerType} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderCustomerType)} />
-          <Input label={`${getText(lang, UIStringKeys.LabelMarketCategory)} *`} id="market" name="market" value={data.market} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderMarketCategory)} />
-          <Input label={`${getText(lang, UIStringKeys.LabelSectorIndustry)} *`} id="sector" name="sector" value={data.sector} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderSectorIndustry)} />
+          <Input label={`${getText(lang, UIStringKeys.LabelCustomerType)}`} id="customerType" name="customerType" value={data.customerType} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderCustomerType)} />
+          <Input label={`${getText(lang, UIStringKeys.LabelMarketCategory)}`} id="market" name="market" value={data.market} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderMarketCategory)} />
+          <Input label={`${getText(lang, UIStringKeys.LabelSectorIndustry)}`} id="sector" name="sector" value={data.sector} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderSectorIndustry)} />
           <Input label={getText(lang, UIStringKeys.LabelProductService)} id="productOrService" name="productOrService" value={data.productOrService} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderProductService)} />
         </Card>
 
@@ -395,7 +433,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
           <AIHelperTextarea
             id="businessChallenge"
             name="businessChallenge"
-            label={`${getText(lang, UIStringKeys.LabelBusinessChallenge)} *`}
+            label={`${getText(lang, UIStringKeys.LabelBusinessChallenge)}`}
             apiLabel={getText(lang, UIStringKeys.LabelBusinessChallenge)}
             value={data.businessChallenge}
             onChange={handleChange}
@@ -406,7 +444,7 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
           <AIHelperTextarea
             id="customerChallenge"
             name="customerChallenge"
-            label={`${getText(lang, UIStringKeys.LabelCustomerChallenge)} *`}
+            label={`${getText(lang, UIStringKeys.LabelCustomerChallenge)}`}
             apiLabel={getText(lang, UIStringKeys.LabelCustomerChallenge)}
             value={data.customerChallenge}
             onChange={handleChange}
@@ -417,7 +455,6 @@ const DiagnosisStep: React.FC<DiagnosisStepProps> = ({ data, onUpdate, lang }) =
           <Select label={getText(lang, UIStringKeys.LabelConsumerInvolvement)} id="involvement" name="involvement" value={data.consumerContext.involvement} onChange={handleChange} options={involvementLevelOptions} lang={lang} />
           <Select label={getText(lang, UIStringKeys.LabelFunnelStage)} id="funnelStage" name="funnelStage" value={data.consumerContext.funnelStage} onChange={handleChange} options={funnelStageOptions} lang={lang} />
           <Textarea label={getText(lang, UIStringKeys.LabelConsumerBarriers)} id="barriers" name="barriers" value={data.consumerContext.barriers} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderConsumerBarriers)} />
-          {/* Moved Current Strategy here as an optional/extracted field */}
            <Textarea label={getText(lang, UIStringKeys.LabelCurrentStrategy)} id="currentStrategyAttempt" name="currentStrategyAttempt" value={data.currentStrategyAttempt} onChange={handleChange} placeholder={getText(lang, UIStringKeys.PlaceholderCurrentStrategy)} rows={2} />
         </Card>
       </div>

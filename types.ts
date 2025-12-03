@@ -184,6 +184,7 @@ export enum UIStringKeys {
   ButtonRegeneratePrompts = "ButtonRegeneratePrompts",
   ButtonAnalyzeBriefing = "ButtonAnalyzeBriefing", // New
   ButtonAnalyzing = "ButtonAnalyzing", // New
+  ButtonSkipStep = "ButtonSkipStep", // New
   CopyToClipboard = "CopyToClipboard",
   DownloadAsMD = "DownloadAsMD",
   ResultsCopied = "ResultsCopied",

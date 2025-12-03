@@ -14,44 +14,30 @@ const getAiClient = () => {
 
 // --- PERSONAS & SYSTEM PROMPTS ---
 
-// UPDATED: CSO DIGITAL MEDIA & ADTECH BIAS
-const BASE_SYSTEM_PROMPT_STRATEGIST = `You are the **Chief Strategy Officer (CSO)** specialized in **Digital Media, Adtech, Measurement, Data Strategy, and Performance**. You are an expert in Richard Rumelt's "Good Strategy, Bad Strategy" framework.
+// UPDATED: CSO DIGITAL MEDIA & ADTECH BIAS (STRICT SECTION 4.1 IMPLEMENTATION)
+const BASE_SYSTEM_PROMPT_STRATEGIST = `Eres un Chief Strategy Officer especializado en Digital Media, Adtech, Medición, Data Strategy y Performance.
 
-**YOUR GOAL:**
-Transform disordered inputs into a structured Strategic Challenge.
-You must ALWAYS generate **Three Strategic Angles (A, B, C)** before defining the final Rumelt Kernel.
+Pensarás siempre desde la perspectiva de cómo los medios, los datos y la tecnología publicitaria impactan el negocio del cliente.
 
-**PERSPECTIVE (MEDIA + TECH + DATA):**
-*   Think in terms of audience addressability, first-party data, tech stack maturity, and measurement frameworks.
-*   Avoid generic marketing fluff. Focus on the mechanics of growth via media and tech.
+Tu objetivo es transformar inputs desordenados (texto en bruto, documentos, notas, briefing, audios transcritos) en:
 
-**REQUIRED OUTPUT STRUCTURE:**
+- Tres retos estratégicos (A, B y C)
+- Un Rumelt Kernel (Diagnosis + Guiding Policy)
+- Cultural tension
+- Market opportunity
+- Consumer insight
+- Behavioral justification
+- Key assumptions
+- Relevant mental models
+- Tres narrativas estratégicas (challenger, consultiva, mixta)
 
-1.  **Strategic Alternatives (A/B/C):**
-    *   **A: Challenger:** Disruptive, bold, riskier. Changes the rules of the category.
-    *   **B: Consultative:** Efficiency-focused, safe, optimization of current assets.
-    *   **C: Mixed (Synthesis):** The balanced approach. (Likely the recommended path).
-
-2.  **Analytical Blocks (Context):**
-    *   **Cultural Tension:** What is happening in culture/media that creates friction?
-    *   **Market Opportunity:** The specific Adtech/Data gap to exploit.
-    *   **Consumer Insight:** Deep truth about the user's relationship with the category.
-
-3.  **Rumelt Kernel (Based on the BEST angle, usually C):**
-    *   **Diagnosis:** The root cause (Obstacle).
-    *   **Guiding Policy:** The strategic approach.
-
-4.  **Validation:**
-    *   **Behavioral Justification:** Behavioral economics principle (e.g., Loss Aversion, Social Proof).
-    *   **Key Assumptions:** 2-5 hypotheses that must be true.
-    *   **Mental Models:** Frameworks used (e.g., Rumelt, Flywheel, Pace Layering).
-
-**ABSOLUTE PROHIBITIONS:**
-*   NO TACTICS (No specific banner ideas, influencers, or channel plans).
-*   Keep it STRATEGIC.
-
-**Format:**
-Return a valid JSON object.`;
+REGLAS:
+- No bajas a táctica.
+- No haces recomendaciones creativas.
+- No incluyes detalles de operación de campañas.
+- No propones grandes reestructuraciones organizativas.
+- Todo el texto debe estar en español.
+- La salida debe ser SIEMPRE un objeto JSON con las claves requeridas.`;
 
 const BASE_SYSTEM_PROMPT_BRIEFING_ANALYZER = `You are an expert Strategic Planner and Data Analyst acting as a CSO.
 Your task is to analyze the available inputs (Client Name, Contextual Dropdowns, and Optional Files/Notes).
@@ -200,11 +186,15 @@ export const generateChallengeFormulation = async (data: DiagnosisData, lang: La
     - Briefing/Notes: ${data.manualBriefingText || ""} ${data.briefingFileContent ? "(See file)" : ""}
 
     **Task:**
-    As the CSO (Digital Media & Adtech), provide the **3 Strategic Angles (A, B, C)** and then the **Rumelt Kernel** for the recommended path.
-    Focus on Data, Tech, and Media Efficiency. 
-    NO TACTICS.
+    As the CSO (Digital Media & Adtech), provide the **3 Strategic Angles (A, B, C)** as Narratives and then the **Rumelt Kernel**.
     
-    **CRITICAL:** The output MUST be in ${lang === Language.ES ? 'SPANISH' : 'ENGLISH'}.
+    **Structure:**
+    1. Three Proposals (Challenger, Consultative, Mixed).
+    2. Rumelt Kernel (Diagnosis + Policy).
+    3. Analytical Blocks (Tension, Opportunity, Insight).
+    4. Validation (Behavioral, Assumptions, Models).
+    
+    NO TACTICS. Focus on Media, Tech & Data.
     
     RETURN JSON ONLY.
   `;
@@ -230,17 +220,17 @@ export const generateChallengeFormulation = async (data: DiagnosisData, lang: La
   const responseSchema: Schema = {
     type: Type.OBJECT,
     properties: {
-      strategicAlternativeA: { type: Type.STRING, description: "Option A: Challenger / Disruptive Approach. Bold change." },
-      strategicAlternativeB: { type: Type.STRING, description: "Option B: Consultative / Efficiency Approach. Optimization focused." },
-      strategicAlternativeC: { type: Type.STRING, description: "Option C: Mixed / Synthesis. Balanced approach." },
-      culturalTension: { type: Type.STRING, description: "A significant cultural shift, media trend, or paradox relevant to the user's context." },
-      marketOpportunity: { type: Type.STRING, description: "A specific, actionable market or media opportunity (Adtech/Data/Performance)." },
-      consumerInsight: { type: Type.STRING, description: "A deep, non-obvious understanding of the target consumer's motivations and media behaviors." },
-      rumeltDiagnosis: { type: Type.STRING, description: "The critical challenge (Root Cause) of the recommended strategy (usually Option C)." },
-      rumeltGuidingPolicy: { type: Type.STRING, description: "The overall strategic approach to overcome the diagnosed challenge. High-level direction, not tactics." },
-      behavioralJustification: { type: Type.STRING, description: "A core principle from human psychology/behavioral economics explaining WHY this policy works." },
-      keyAssumptions: { type: Type.STRING, description: "2-5 critical assumptions underpinning the strategy." },
-      relevantMentalModels: { type: Type.STRING, description: "Relevant strategic frameworks (e.g., Rumelt, Leverage points) used." },
+      strategicAlternativeA: { type: Type.STRING, description: "Option A: Challenger Narrative. Disruptive, bold." },
+      strategicAlternativeB: { type: Type.STRING, description: "Option B: Consultative Narrative. Efficiency, optimization." },
+      strategicAlternativeC: { type: Type.STRING, description: "Option C: Mixed / Synthesis Narrative. Balanced." },
+      culturalTension: { type: Type.STRING, description: "Cultural Tension." },
+      marketOpportunity: { type: Type.STRING, description: "Market Opportunity (Adtech/Data)." },
+      consumerInsight: { type: Type.STRING, description: "Consumer Insight." },
+      rumeltDiagnosis: { type: Type.STRING, description: "Rumelt's Diagnosis (Root Cause)." },
+      rumeltGuidingPolicy: { type: Type.STRING, description: "Rumelt's Guiding Policy (Strategic Approach)." },
+      behavioralJustification: { type: Type.STRING, description: "Behavioral Economics Principle." },
+      keyAssumptions: { type: Type.STRING, description: "2-5 Key Hypotheses." },
+      relevantMentalModels: { type: Type.STRING, description: "Mental Models used." },
     },
     required: ["strategicAlternativeA", "strategicAlternativeB", "strategicAlternativeC", "culturalTension", "marketOpportunity", "consumerInsight", "rumeltDiagnosis", "rumeltGuidingPolicy", "behavioralJustification", "keyAssumptions", "relevantMentalModels"],
   };

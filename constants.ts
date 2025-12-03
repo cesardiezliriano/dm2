@@ -108,6 +108,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.ButtonRegeneratePrompts]: "Regenerate Avenues",
     [UIStringKeys.ButtonAnalyzeBriefing]: "Analyze Briefing with AI", // UPDATED
     [UIStringKeys.ButtonAnalyzing]: "Analyzing Briefing...", // UPDATED
+    [UIStringKeys.ButtonSkipStep]: "Skip this step (Use Defaults)", // NEW
     [UIStringKeys.CopyToClipboard]: "Copy to Clipboard",
     [UIStringKeys.DownloadAsMD]: "Download as .md File",
     [UIStringKeys.ResultsCopied]: "Results copied to clipboard!",
@@ -136,15 +137,15 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.HeaderInformationSources]: "Information Sources",
     [UIStringKeys.HeaderDiagnosisSnapshot]: "Diagnosis Input Snapshot",
     [UIStringKeys.HeaderStrategicChallengeCore]: "Strategic Challenge Kernel (Rumelt)",
-    [UIStringKeys.HeaderStrategicAlternatives]: "3 Strategic Angles (Select One)", // New
+    [UIStringKeys.HeaderStrategicAlternatives]: "3 Strategic Angles (Select One)", 
   
-    [UIStringKeys.DescriptionDiagnosis]: "Provide client details and optional inputs. The AI will extract the context using your settings.",
+    [UIStringKeys.DescriptionDiagnosis]: "Provide client details and mandatory Raw Text input. The AI will extract the context using your settings.",
     [UIStringKeys.DescriptionChallengeFormulation]: "The AI CSO articulates 3 Strategic Angles (Challenger, Consultative, Mixed). Select the one that best fits.",
     [UIStringKeys.DescriptionSmartPrompts]: "Identify avenues for investigation in Data, Tech, and Media efficiency to support the Guiding Policy.",
     [UIStringKeys.DescriptionResults]: "Review your complete strategic formulation. You can copy it or download it as a text file.",
 
     [UIStringKeys.PlaceholderLoading]: "Loading...",
-    [UIStringKeys.LabelClientName]: "Client Name (Mandatory)",
+    [UIStringKeys.LabelClientName]: "Client Name",
     [UIStringKeys.PlaceholderNoFileSelected]: "No file selected",
     [UIStringKeys.FileSelected]: "Selected: {fileName}",
     [UIStringKeys.FileParsing]: "Parsing: {fileName}",
@@ -154,7 +155,7 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.LabelDigitalMaturity]: "Digital Maturity Level",
 
     [UIStringKeys.LabelUploadBriefing]: "Briefing / Inputs",
-    [UIStringKeys.LabelBriefingSource]: "Briefing Source (Optional)",
+    [UIStringKeys.LabelBriefingSource]: "Briefing Source",
     [UIStringKeys.TabPDF]: "File Upload",
     [UIStringKeys.TabImages]: "Screenshots",
     [UIStringKeys.TabManualText]: "Manual Input",
@@ -249,8 +250,9 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.ButtonRegenerateChallenge]: "Regenerar Núcleo del Reto",
     [UIStringKeys.ButtonGenerateSmartPrompts]: "Generar Vías Estratégicas",
     [UIStringKeys.ButtonRegeneratePrompts]: "Regenerar Vías",
-    [UIStringKeys.ButtonAnalyzeBriefing]: "Analizar briefing con IA", // UPDATED: Lowercase 'briefing' and removed CSO
-    [UIStringKeys.ButtonAnalyzing]: "Analizando briefing...", // UPDATED
+    [UIStringKeys.ButtonAnalyzeBriefing]: "Analizar briefing con IA", 
+    [UIStringKeys.ButtonAnalyzing]: "Analizando briefing...", 
+    [UIStringKeys.ButtonSkipStep]: "Omitir paso (Usar Defaults)", // NEW
     [UIStringKeys.CopyToClipboard]: "Copiar al Portapapeles",
     [UIStringKeys.DownloadAsMD]: "Descargar como .md",
     [UIStringKeys.ResultsCopied]: "¡Resultados copiados al portapapeles!",
@@ -279,9 +281,9 @@ export const translations: Record<Language, Record<UIStringKeys, string>> = {
     [UIStringKeys.HeaderInformationSources]: "Fuentes de Información",
     [UIStringKeys.HeaderDiagnosisSnapshot]: "Resumen del Diagnóstico (Entrada)",
     [UIStringKeys.HeaderStrategicChallengeCore]: "Núcleo del Reto Estratégico (Rumelt)",
-    [UIStringKeys.HeaderStrategicAlternatives]: "3 Ángulos Estratégicos (Selecciona Uno)", // New
+    [UIStringKeys.HeaderStrategicAlternatives]: "3 Ángulos Estratégicos (Selecciona Uno)",
 
-    [UIStringKeys.DescriptionDiagnosis]: "Aporta detalles del cliente y opciones obligatorias. El CSO IA extraerá el contexto de estos datos y archivos opcionales.",
+    [UIStringKeys.DescriptionDiagnosis]: "Aporta detalles del cliente y texto manual obligatorio. El CSO IA extraerá el contexto de estos datos y archivos opcionales.",
     [UIStringKeys.DescriptionChallengeFormulation]: "El CSO IA diseña 3 Ángulos (Challenger, Consultivo, Mixto). Selecciona el que mejor encaje.",
     [UIStringKeys.DescriptionSmartPrompts]: "Identifica vías de investigación en Data, Tech y Eficiencia de Medios para apoyar la Política Guía.",
     [UIStringKeys.DescriptionResults]: "Revisa tu formulación estratégica completa. Puedes copiarla o descargarla como un archivo de texto.",

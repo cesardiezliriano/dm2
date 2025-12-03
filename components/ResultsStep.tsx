@@ -94,11 +94,22 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ data, lang }) => {
     const element = document.createElement("a");
     const file = new Blob([textToDownload], {type: 'text/markdown;charset=utf-8'}); 
     element.href = URL.createObjectURL(file);
-    element.download = "Strategic_Challenge_Summary_Rumelt.md"; 
+    
+    // FORMAT: CLIENTNAME_RetoEstrategico_YYYYMMDD_HHMM.md
+    const clientName = (data.diagnosis.clientName || "Client").replace(/[^a-zA-Z0-9]/g, "_");
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const timestamp = `${yyyy}${mm}${dd}_${hh}${min}`;
+    
+    element.download = `${clientName}_RetoEstrategico_${timestamp}.md`; 
     document.body.appendChild(element); 
     element.click();
     document.body.removeChild(element);
-  }, [formatForExport]);
+  }, [formatForExport, data.diagnosis.clientName]);
 
   return (
     <div className="space-y-8 animate-fadeIn">
